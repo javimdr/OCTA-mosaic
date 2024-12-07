@@ -1,21 +1,35 @@
+from typing import Literal
+
 import cv2
+import numpy as np
 
 from octa_mosaic.modules.utils import metrics
 
 
-def template_matching(fixed, template, corr_func="ZNCC", mode="same"):
+def template_matching(
+    fixed: np.ndarray,
+    template: np.ndarray,
+    corr_func: Literal["ZNCC", "CV"] = "ZNCC",
+    mode: Literal["same", "full"] = "full",
+):
     """
-    Realiza el proceso de template matching empleando la función de
-    correlación seleccionada.
+    Find the location of the maximum correlation between a fixed
+    image and a template.
 
-    :param fixed: imagen estática
-    :param template: plantilla
-    :param corr_func: función de correlación. Funciones:
-        - CV: cv2.TM_CCORR_NORMED
-        - ZNCC: Zero Normalized Cross Correlation
+    Parameters:
+        fixed (np.ndarray): The fixed image for template matching.
+        template (np.ndarray): The template to match against the fixed image.
+        corr_func (str): The type of correlation function to use. Supported values
+            are "CV" (uses cv2.matchTemplate) and "ZNCC" (uses metrics.normxcorr2).
+        mode (str): How to handle edge pixels when matching. Supported values are
+            "same" and "full".
 
-    :return: Valor máximo de correlación, su posición (esquina superior izq.)
-    en forma 'xy' y la matriz de correlación.
+        Returns:
+            max_value (float): The highest correlation value.
+            max_location (tuple): The coordinates of the maximum correlation point in
+                the format (x, y).
+            ccorr_matrix (np.ndarray): The 2D correlation matrix between the fixed and
+                template.
     """
     _CCORR_FUNCTIONS = ["CV", "ZNCC"]
 
@@ -30,5 +44,5 @@ def template_matching(fixed, template, corr_func="ZNCC", mode="same"):
             f"Invalid correlation function. Use one of this: {_CCORR_FUNCTIONS}"
         )
 
-    min_value, max_value, min_location, max_location = cv2.minMaxLoc(ccorr_matrix)
+    _, max_value, _, max_location = cv2.minMaxLoc(ccorr_matrix)
     return max_value, max_location, ccorr_matrix
