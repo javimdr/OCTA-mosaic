@@ -149,32 +149,32 @@ def tf_matrix_to_tf_repr(tf_matrix: AffineTransform) -> np.ndarray:
     return np.array([tx, ty, sx, sy, rot, shear], "float32")
 
 
-def individual_to_mosaico(individual: np.ndarray, mosaico: Mosaic) -> Mosaic:
-    n_images = len(mosaico.images_list)
-    new_mosaico = mosaico.copy()
+def individual_to_mosaic(individual: np.ndarray, mosaic: Mosaic) -> Mosaic:
+    n_images = len(mosaic.images_list)
+    new_mosaic = mosaic.copy()
 
     tfs_list = [
         tf_repr_to_tf_matrix(individual[idx * 6 : (idx * 6) + 6])
         for idx in range(n_images)
     ]
-    new_mosaico.set_transforms_list(tfs_list)
+    new_mosaic.set_transforms_list(tfs_list)
 
-    return new_mosaico
+    return new_mosaic
 
 
-def get_images_and_masks_list(mosaico: Mosaic):
-    n_images = mosaico.n_images()
-    mosaico_size = mosaico.mosaic_size
+def get_images_and_masks_list(mosaic: Mosaic):
+    n_images = mosaic.n_images()
+    mosaic_size = mosaic.mosaic_size
 
-    masks_list = np.zeros((n_images, *mosaico_size), bool)
-    images_list = np.zeros((n_images, *mosaico_size))
+    masks_list = np.zeros((n_images, *mosaic_size), bool)
+    images_list = np.zeros((n_images, *mosaic_size))
 
     for idx in range(n_images):
-        image, _, _ = mosaico.get_image_data(idx)
-        tf = mosaico.image_centered_transform(idx)
+        image, _, _ = mosaic.get_image_data(idx)
+        tf = mosaic.image_centered_transform(idx)
 
-        mask_tf = cv2.warpPerspective(np.ones_like(image), tf.params, mosaico_size[::-1])
-        image_tf = cv2.warpPerspective(image, tf.params, mosaico_size[::-1])
+        mask_tf = cv2.warpPerspective(np.ones_like(image), tf.params, mosaic_size[::-1])
+        image_tf = cv2.warpPerspective(image, tf.params, mosaic_size[::-1])
 
         masks_list[idx] = mask_tf.astype(bool)
         images_list[idx] = image_tf
@@ -211,13 +211,13 @@ def calc_border_of_overlap(fg, bg, border_px=10):
 
 # ======== Funciones objetivo ========
 def calc_CC_on_overlaps_and_areas(
-    mosaico: Mosaic, border_px: int = 10, min_area: int = 0
+    mosaic: Mosaic, border_px: int = 10, min_area: int = 0
 ) -> Tuple[np.ndarray, np.ndarray]:
     """_summary_
 
     Parameters
     ----------
-    mosaico : Mosaico
+    mosaic : mosaic
         Mosaic to evaluate.
     border_px : int, optional
         Anchor of the edge overlap, by default 10
@@ -230,14 +230,14 @@ def calc_CC_on_overlaps_and_areas(
     Tuple[np.ndarray, np.ndarray]
         Correlation list and area size of each overlap.
     """
-    images_list, masks_list = get_images_and_masks_list(mosaico)
+    images_list, masks_list = get_images_and_masks_list(mosaic)
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
-    CC_list = np.zeros(mosaico.n_images() - 1)
-    border_size_list = np.zeros(mosaico.n_images() - 1)
+    CC_list = np.zeros(mosaic.n_images() - 1)
+    border_size_list = np.zeros(mosaic.n_images() - 1)
 
-    for idx in range(1, mosaico.n_images()):
+    for idx in range(1, mosaic.n_images()):
         bg_mask = masks_list[idx]
         bg_image = images_list[idx]
 
@@ -265,29 +265,29 @@ def calc_CC_on_overlaps_and_areas(
     return CC_list, weights_list
 
 
-def func_objetivo_borde(individual, mosaico, border_px=10, boder_size_th=0):
+def func_objetivo_borde(individual, mosaic, border_px=10, boder_size_th=0):
     """Función base. NO USAR. Devuelve una lista de correlaciones y sus pesos asociados"""
-    curr_mosaico = individual_to_mosaico(individual, mosaico)
-    return calc_CC_on_overlaps_and_areas(curr_mosaico, border_px, boder_size_th)
+    curr_mosaic = individual_to_mosaic(individual, mosaic)
+    return calc_CC_on_overlaps_and_areas(curr_mosaic, border_px, boder_size_th)
 
 
-def func_objetivo_borde_sum(individual, mosaico, border_px=10):
-    CC_list, weights_list = func_objetivo_borde(individual, mosaico, border_px)
+def func_objetivo_borde_sum(individual, mosaic, border_px=10):
+    CC_list, weights_list = func_objetivo_borde(individual, mosaic, border_px)
     return np.sum(CC_list)
 
 
-def func_objetivo_borde_prod(individual, mosaico, border_px=10):
-    CC_list, weights_list = func_objetivo_borde(individual, mosaico, border_px)
+def func_objetivo_borde_prod(individual, mosaic, border_px=10):
+    CC_list, weights_list = func_objetivo_borde(individual, mosaic, border_px)
     return np.prod(CC_list)
 
 
-def func_objetivo_borde_weighted_sum(individual, mosaico, border_px=10):
-    CC_list, weights_list = func_objetivo_borde(individual, mosaico, border_px)
+def func_objetivo_borde_weighted_sum(individual, mosaic, border_px=10):
+    CC_list, weights_list = func_objetivo_borde(individual, mosaic, border_px)
     return np.sum(CC_list * weights_list)
 
 
 def objective_function_multi_edge(
-    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaic: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -295,7 +295,7 @@ def objective_function_multi_edge(
     assert len(borders_width) == len(borders_weight)
 
     CC_border_list = [
-        func_objetivo_borde_weighted_sum(individual, mosaico, border_px=border)
+        func_objetivo_borde_weighted_sum(individual, mosaic, border_px=border)
         for border in borders_width
     ]
 
@@ -305,8 +305,8 @@ def objective_function_multi_edge(
 ### Geometric Mean
 
 
-def objective_function_edge_geometric_mean(individual, mosaico, border_px=10):
-    CC_list, _ = func_objetivo_borde(individual, mosaico, border_px)
+def objective_function_edge_geometric_mean(individual, mosaic, border_px=10):
+    CC_list, _ = func_objetivo_borde(individual, mosaic, border_px)
     CC_list_corrected = np.where(CC_list > 0, CC_list, 1e-5)
 
     n = len(CC_list_corrected)
@@ -316,7 +316,7 @@ def objective_function_edge_geometric_mean(individual, mosaico, border_px=10):
 
 
 def objective_function_multi_edge_geometric_mean(
-    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaic: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -324,7 +324,7 @@ def objective_function_multi_edge_geometric_mean(
     assert len(borders_width) == len(borders_weight)
 
     CC_border_list = [
-        objective_function_edge_geometric_mean(individual, mosaico, border_px=border)
+        objective_function_edge_geometric_mean(individual, mosaic, border_px=border)
         for border in borders_width
     ]
 
@@ -334,8 +334,8 @@ def objective_function_multi_edge_geometric_mean(
 # Geometric mean v2
 
 
-def objective_function_edge_geometric_mean_v2(individual, mosaico, border_px=10):
-    CC_list, _ = func_objetivo_borde(individual, mosaico, border_px)
+def objective_function_edge_geometric_mean_v2(individual, mosaic, border_px=10):
+    CC_list, _ = func_objetivo_borde(individual, mosaic, border_px)
     n = len(CC_list)
     assert n > 0, "No hay ningún valor de correlación."
 
@@ -348,7 +348,7 @@ def objective_function_edge_geometric_mean_v2(individual, mosaico, border_px=10)
 
 
 def objective_function_multi_edge_geometric_mean_v2(
-    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaic: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -356,7 +356,7 @@ def objective_function_multi_edge_geometric_mean_v2(
     assert len(borders_width) == len(borders_weight)
 
     CC_border_list = [
-        objective_function_edge_geometric_mean_v2(individual, mosaico, border_px=border)
+        objective_function_edge_geometric_mean_v2(individual, mosaic, border_px=border)
         for border in borders_width
     ]
 
@@ -364,15 +364,15 @@ def objective_function_multi_edge_geometric_mean_v2(
 
 
 # =========== DICE ===================
-def calc_dice_and_areas(mosaico, border_px=10, boder_size_th=0):
-    images_list, masks_list = get_images_and_masks_list(mosaico)
+def calc_dice_and_areas(mosaic, border_px=10, boder_size_th=0):
+    images_list, masks_list = get_images_and_masks_list(mosaic)
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
-    CC_list = np.zeros(mosaico.n_images() - 1)
-    border_size_list = np.zeros(mosaico.n_images() - 1)
+    CC_list = np.zeros(mosaic.n_images() - 1)
+    border_size_list = np.zeros(mosaic.n_images() - 1)
 
-    for idx in range(1, mosaico.n_images()):
+    for idx in range(1, mosaic.n_images()):
         bg_mask = masks_list[idx]
         bg_image = images_list[idx]
 
@@ -398,9 +398,9 @@ def calc_dice_and_areas(mosaico, border_px=10, boder_size_th=0):
     return CC_list, weights_list
 
 
-def func_objetivo_edge_dice(individual, base_mosaico, border_px=10):
-    individual_mosaico = individual_to_mosaico(individual, base_mosaico)
-    DICE_list, weights_list = calc_dice_and_areas(individual_mosaico, border_px)
+def func_objetivo_edge_dice(individual, base_mosaic, border_px=10):
+    individual_mosaic = individual_to_mosaic(individual, base_mosaic)
+    DICE_list, weights_list = calc_dice_and_areas(individual_mosaic, border_px)
     return np.sum(DICE_list * weights_list)
 
 
@@ -409,19 +409,19 @@ def func_objetivo_edge_dice(individual, base_mosaico, border_px=10):
 
 def calc_metric_edge(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
-    mosaico: Mosaic,
+    mosaic: Mosaic,
     border_px: int = 10,
     boder_size_th: int = 0,
 ) -> Tuple[np.ndarray, np.ndarray]:
 
-    images_list, masks_list = get_images_and_masks_list(mosaico)
+    images_list, masks_list = get_images_and_masks_list(mosaic)
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
-    metric_list = np.zeros(mosaico.n_images() - 1)
-    border_size_list = np.zeros(mosaico.n_images() - 1)
+    metric_list = np.zeros(mosaic.n_images() - 1)
+    border_size_list = np.zeros(mosaic.n_images() - 1)
 
-    for idx in range(1, mosaico.n_images()):
+    for idx in range(1, mosaic.n_images()):
         bg_mask = masks_list[idx]
         bg_image = images_list[idx]
 
@@ -449,7 +449,7 @@ def calc_metric_edge(
 
 def calc_metric_multiples_edges(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
-    mosaico: Mosaic,
+    mosaic: Mosaic,
     borders_width: List[int],
     borders_weight: List[float],
     boder_size_th: int = 0,
@@ -460,7 +460,7 @@ def calc_metric_multiples_edges(
 
     CC_border_list = []
     for border in borders_width:
-        CC_list, weights_list = calc_metric_edge(metric_func, mosaico, border_px=border)
+        CC_list, weights_list = calc_metric_edge(metric_func, mosaic, border_px=border)
         CC_border = np.sum(CC_list * weights_list)
         CC_border_list.append(CC_border)
 
@@ -492,7 +492,7 @@ def calc_zncc_on_overlaps(
 
     Parameters
     ----------
-    mosaico : Mosaico
+    mosaic : mosaic
         Mosaic to evaluate.
     border_px : int, optional
         Anchor of the edge overlap, by default 10
@@ -541,21 +541,21 @@ def calc_zncc_on_overlaps(
 
 # TODO: Revisar
 def objective_function_multi_edge_optimized(
-    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaic: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
     """
-    current_mosaico = individual_to_mosaico(individual, mosaico)
-    return multi_edge_optimized(current_mosaico, borders_width, borders_weight)
+    current_mosaic = individual_to_mosaic(individual, mosaic)
+    return multi_edge_optimized(current_mosaic, borders_width, borders_weight)
 
 
 def multi_edge_optimized(
-    mosaico: Mosaic, borders_width: list, borders_weight: list
+    mosaic: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
 
     assert len(borders_width) == len(borders_weight)
-    images_list, masks_list = get_images_and_masks_list(mosaico)
+    images_list, masks_list = get_images_and_masks_list(mosaic)
 
     CC_border_list = []
     for border_px in borders_width:
@@ -577,17 +577,17 @@ def multi_edge_optimized(
 
 
 def objective_function_seamline_zncc(
-    individual: np.ndarray, mosaico: Mosaic, border_width: int
+    individual: np.ndarray, mosaic: Mosaic, border_width: int
 ) -> float:
     """
     Calcula el valor de ZNCC.
     """
-    current_mosaico = individual_to_mosaico(individual, mosaico)
-    return seamline_zncc(current_mosaico, border_width)
+    current_mosaic = individual_to_mosaic(individual, mosaic)
+    return seamline_zncc(current_mosaic, border_width)
 
 
-def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
-    images_list, masks_list = get_images_and_masks_list(mosaico)
+def seamline_zncc(mosaic: Mosaic, border_width: int) -> float:
+    images_list, masks_list = get_images_and_masks_list(mosaic)
 
     overlaps_list = calc_overlaps(masks_list, border_width)
     CC_list, area_list = calc_zncc_on_overlaps(overlaps_list, images_list, masks_list)
@@ -605,7 +605,7 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 # import numpy as np
 # import cv2
 # from skimage.transform import AffineTransform
-# from .mosaico import Mosaico, RigidMosaico
+# from .mosaic import mosaic, Rigidmosaic
 # from .evolutionary import init_population_lhs
 # from mosaicking.modules.utils import metrics, plots
 # import copy
@@ -710,33 +710,33 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 #     #print(np.round(T.params, 2))
 #     return T
 
-# def individual_to_mosaico(individual, mosaico):
-#     n_images = len( mosaico.images_list ) ##
-#     new_mosaico = RigidMosaico()
+# def individual_to_mosaic(individual, mosaic):
+#     n_images = len( mosaic.images_list ) ##
+#     new_mosaic = Rigidmosaic()
 
 #     for idx in range(n_images):
 #         theta = tf_repr_to_tf_matrix(individual[idx*6:(idx*6)+6])
-#         image, translation = mosaico.get_image_data(idx)
-#         new_mosaico.add(image, translation, theta)
+#         image, translation = mosaic.get_image_data(idx)
+#         new_mosaic.add(image, translation, theta)
 
-#     return new_mosaico
+#     return new_mosaic
 
-# def get_images_and_masks_list(mosaico):
-#     n_images = mosaico.n_images()
-#     mosaico_size = mosaico.mosaic_size
+# def get_images_and_masks_list(mosaic):
+#     n_images = mosaic.n_images()
+#     mosaic_size = mosaic.mosaic_size
 
-#     masks_list = np.zeros((n_images, *mosaico_size), bool)
-#     images_list = np.zeros((n_images, *mosaico_size))
+#     masks_list = np.zeros((n_images, *mosaic_size), bool)
+#     images_list = np.zeros((n_images, *mosaic_size))
 
 #     for idx in range(n_images):
-#         if isinstance(mosaico, RigidMosaico):
-#             image, _, _ = mosaico.get_image_data(idx)
-#             tf = mosaico.image_centered_transform(idx)
+#         if isinstance(mosaic, Rigidmosaic):
+#             image, _, _ = mosaic.get_image_data(idx)
+#             tf = mosaic.image_centered_transform(idx)
 #         else:
-#             image, tf = mosaico.get_image_data(idx)
+#             image, tf = mosaic.get_image_data(idx)
 
-#         mask_tf = cv2.warpPerspective(np.ones_like(image), tf.params, mosaico_size[::-1])
-#         image_tf = cv2.warpPerspective(image, tf.params, mosaico_size[::-1])
+#         mask_tf = cv2.warpPerspective(np.ones_like(image), tf.params, mosaic_size[::-1])
+#         image_tf = cv2.warpPerspective(image, tf.params, mosaic_size[::-1])
 
 #         masks_list[idx] = mask_tf.astype(bool)
 #         images_list[idx] = image_tf
@@ -770,17 +770,17 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 # # ======== Funciones objetivo ========
 
-# def func_objetivo_borde(individual, mosaico, border_px=10, boder_size_th=0):
+# def func_objetivo_borde(individual, mosaic, border_px=10, boder_size_th=0):
 #     """ Función base. NO USAR. Devuelve una lista de correlaciones y sus pesos asociados"""
-#     curr_mosaico = individual_to_mosaico(individual, mosaico)
-#     images_list, masks_list = get_images_and_masks_list(curr_mosaico)
+#     curr_mosaic = individual_to_mosaic(individual, mosaic)
+#     images_list, masks_list = get_images_and_masks_list(curr_mosaic)
 
 #     fg_mask = masks_list[0]
 #     fg_image = images_list[0]
-#     CC_list = np.zeros(mosaico.n_images() - 1)
-#     border_size_list = np.zeros(mosaico.n_images() - 1)
+#     CC_list = np.zeros(mosaic.n_images() - 1)
+#     border_size_list = np.zeros(mosaic.n_images() - 1)
 
-#     for idx in range(1, mosaico.n_images()):
+#     for idx in range(1, mosaic.n_images()):
 #         bg_mask = masks_list[idx]
 #         bg_image = images_list[idx]
 
@@ -804,22 +804,22 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 #     return CC_list, weights_list
 
-# def func_objetivo_borde_sum(individual, mosaico, border_px=10):
-#     CC_list, weights_list = func_objetivo_borde(individual, mosaico, border_px)
+# def func_objetivo_borde_sum(individual, mosaic, border_px=10):
+#     CC_list, weights_list = func_objetivo_borde(individual, mosaic, border_px)
 #     return np.sum(CC_list)
 
-# def func_objetivo_borde_prod(individual, mosaico, border_px=10):
-#     CC_list, weights_list = func_objetivo_borde(individual, mosaico, border_px)
+# def func_objetivo_borde_prod(individual, mosaic, border_px=10):
+#     CC_list, weights_list = func_objetivo_borde(individual, mosaic, border_px)
 #     return np.prod(CC_list)
 
-# def func_objetivo_borde_weighted_sum(individual, mosaico, border_px=10):
-#     CC_list, weights_list = func_objetivo_borde(individual, mosaico, border_px)
+# def func_objetivo_borde_weighted_sum(individual, mosaic, border_px=10):
+#     CC_list, weights_list = func_objetivo_borde(individual, mosaic, border_px)
 #     return np.sum(CC_list * weights_list)
 
 
 # def objective_function_multi_edge(
 #         individual: np.ndarray,
-#         mosaico: Mosaico,
+#         mosaic: mosaic,
 #         borders_width: list,
 #         borders_weight: list
 #     ) -> float:
@@ -829,7 +829,7 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 #     assert len(borders_width) == len(borders_weight)
 
 #     CC_border_list = [func_objetivo_borde_weighted_sum(
-#                         individual, mosaico, border_px=border
+#                         individual, mosaic, border_px=border
 #                       ) for border in borders_width]
 
 #     return np.sum(np.multiply(borders_weight, CC_border_list))
@@ -837,8 +837,8 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 # ### Geometric Mean v1.
 
-# def objective_function_edge_geometric_mean(individual, mosaico, border_px=10):
-#     CC_list, _ = func_objetivo_borde(individual, mosaico, border_px)
+# def objective_function_edge_geometric_mean(individual, mosaic, border_px=10):
+#     CC_list, _ = func_objetivo_borde(individual, mosaic, border_px)
 #     CC_list_corrected = np.where(CC_list > 0, CC_list, 1e-5)
 
 #     n = len(CC_list_corrected)
@@ -848,7 +848,7 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 # def objective_function_multi_edge_geometric_mean(
 #         individual: np.ndarray,
-#         mosaico: Mosaico,
+#         mosaic: mosaic,
 #         borders_width: list,
 #         borders_weight: list
 #     ) -> float:
@@ -858,7 +858,7 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 #     assert len(borders_width) == len(borders_weight)
 
 #     CC_border_list = [
-#         objective_function_edge_geometric_mean(individual, mosaico, border_px=border)
+#         objective_function_edge_geometric_mean(individual, mosaic, border_px=border)
 #         for border in borders_width
 #     ]
 
@@ -866,8 +866,8 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 # # Geometric mean v2
 
-# def objective_function_edge_geometric_mean_v2(individual, mosaico, border_px=10):
-#     CC_list, _ = func_objetivo_borde(individual, mosaico, border_px)
+# def objective_function_edge_geometric_mean_v2(individual, mosaic, border_px=10):
+#     CC_list, _ = func_objetivo_borde(individual, mosaic, border_px)
 #     n = len(CC_list)
 #     assert n > 0, "No hay ningún valor de correlación."
 
@@ -880,7 +880,7 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 # def objective_function_multi_edge_geometric_mean_v2(
 #         individual: np.ndarray,
-#         mosaico: Mosaico,
+#         mosaic: mosaic,
 #         borders_width: list,
 #         borders_weight: list
 #     ) -> float:
@@ -890,22 +890,22 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 #     assert len(borders_width) == len(borders_weight)
 
 #     CC_border_list = [
-#         objective_function_edge_geometric_mean_v2(individual, mosaico, border_px=border)
+#         objective_function_edge_geometric_mean_v2(individual, mosaic, border_px=border)
 #         for border in borders_width
 #     ]
 
 #     return np.sum(np.multiply(borders_weight, CC_border_list))
 
 # # =========== DICE ===================
-# def calc_dice_and_areas(mosaico, border_px=10, boder_size_th=0):
-#     images_list, masks_list = get_images_and_masks_list(mosaico)
+# def calc_dice_and_areas(mosaic, border_px=10, boder_size_th=0):
+#     images_list, masks_list = get_images_and_masks_list(mosaic)
 
 #     fg_mask = masks_list[0]
 #     fg_image = images_list[0]
-#     CC_list = np.zeros(mosaico.n_images() - 1)
-#     border_size_list = np.zeros(mosaico.n_images() - 1)
+#     CC_list = np.zeros(mosaic.n_images() - 1)
+#     border_size_list = np.zeros(mosaic.n_images() - 1)
 
-#     for idx in range(1, mosaico.n_images()):
+#     for idx in range(1, mosaic.n_images()):
 #         bg_mask = masks_list[idx]
 #         bg_image = images_list[idx]
 
@@ -927,9 +927,9 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 #     return CC_list, weights_list
 
-# def func_objetivo_edge_dice(individual, base_mosaico, border_px=10):
-#     individual_mosaico = individual_to_mosaico(individual, base_mosaico)
-#     DICE_list, weights_list = calc_dice_and_areas(individual_mosaico, border_px)
+# def func_objetivo_edge_dice(individual, base_mosaic, border_px=10):
+#     individual_mosaic = individual_to_mosaic(individual, base_mosaic)
+#     DICE_list, weights_list = calc_dice_and_areas(individual_mosaic, border_px)
 #     return np.sum(DICE_list * weights_list)
 
 
@@ -937,19 +937,19 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 # def calc_metric_edge(
 #         metric_func: Callable[[np.ndarray, np.ndarray], float],
-#         mosaico: Mosaico,
+#         mosaic: mosaic,
 #         border_px: int = 10,
 #         boder_size_th: int = 0
 #     ) -> float:
 
-#     images_list, masks_list = optimization_utils.get_images_and_masks_list(mosaico)
+#     images_list, masks_list = optimization_utils.get_images_and_masks_list(mosaic)
 
 #     fg_mask = masks_list[0]
 #     fg_image = images_list[0]
-#     metric_list = np.zeros(mosaico.n_images() - 1)
-#     border_size_list = np.zeros(mosaico.n_images() - 1)
+#     metric_list = np.zeros(mosaic.n_images() - 1)
+#     border_size_list = np.zeros(mosaic.n_images() - 1)
 
-#     for idx in range(1, mosaico.n_images()):
+#     for idx in range(1, mosaic.n_images()):
 #         bg_mask = masks_list[idx]
 #         bg_image = images_list[idx]
 
@@ -973,7 +973,7 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 # def calc_metric_multiples_edges(
 #         metric_func: Callable[[np.ndarray, np.ndarray], float],
-#         mosaico: Mosaico,
+#         mosaic: mosaic,
 #         borders_width: List[int],
 #         borders_weight: List[float],
 #         boder_size_th: int = 0
@@ -983,7 +983,7 @@ def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
 
 #     CC_border_list = []
 #     for border in borders_width:
-#         CC_list, weights_list = calc_metric_edge(metric_func, mosaico, border_px=border)
+#         CC_list, weights_list = calc_metric_edge(metric_func, mosaic, border_px=border)
 #         CC_border = np.sum(CC_list * weights_list)
 #         CC_border_list.append(CC_border)
 

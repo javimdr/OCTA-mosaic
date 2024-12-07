@@ -4,7 +4,7 @@ import numpy as np
 
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
 from octa_mosaic.modules.mosaic import Mosaic
-from octa_mosaic.modules.mosaico_tm_register_MB import Mosaico_TM_register_MB
+from octa_mosaic.modules.mosaic_tm_register_MB import mosaic_TM_register_MB
 
 
 class TemplateMatchingEvaluatingEdges(Procedure):
@@ -18,7 +18,7 @@ class TemplateMatchingEvaluatingEdges(Procedure):
         border_width_list = fobj_kwargs["border_width_list"]
         border_weight_list = fobj_kwargs["border_weight_list"]
 
-        register = Mosaico_TM_register_MB(border_width_list, border_weight_list)
+        register = mosaic_TM_register_MB(border_width_list, border_weight_list)
         images_order, images_locations = register.create_mosaic(images_list)
         mosaic_tm = register.mosaic_from_indices(
             images_order, images_locations, images_list
@@ -41,12 +41,12 @@ class TemplateMatchingEvaluatingEdges(Procedure):
 
     @staticmethod
     def mosaic_from_report(images_list: List[np.ndarray], report: Report) -> Mosaic:
-        mosaico = Mosaic()
+        mosaic = Mosaic()
 
         for image_data in report["images_order"]:
             image = images_list[image_data["index"]]
             location = image_data["location"]
 
-            mosaico.add(image, location, "ij")
+            mosaic.add(image, location, "ij")
 
-        return mosaico
+        return mosaic

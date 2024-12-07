@@ -44,14 +44,14 @@ class Mosaic:
         return True
 
     def copy(self) -> "Mosaic":
-        new_mosaico = Mosaic()
+        new_mosaic = Mosaic()
 
-        new_mosaico.images_list = deepcopy(self.images_list)
-        new_mosaico.translations_list = deepcopy(self.translations_list)
-        new_mosaico.transformations_list = deepcopy(self.transformations_list)
-        new_mosaico.mosaic_size = self.mosaic_size
+        new_mosaic.images_list = deepcopy(self.images_list)
+        new_mosaic.translations_list = deepcopy(self.translations_list)
+        new_mosaic.transformations_list = deepcopy(self.transformations_list)
+        new_mosaic.mosaic_size = self.mosaic_size
 
-        return new_mosaico
+        return new_mosaic
 
     def add(self, image, translation=None, tr_format="ij"):
         """
@@ -160,11 +160,11 @@ class Mosaic:
         shift[:2, -1] = [pad, pad]
         h, w = self.mosaic_size
 
-        mosaico = np.pad(np.zeros((h + pad * 2, w + pad * 2)), pad)
+        mosaic = np.pad(np.zeros((h + pad * 2, w + pad * 2)), pad)
         if rgb:
-            mosaico = np.dstack((mosaico, mosaico, mosaico))
+            mosaic = np.dstack((mosaic, mosaic, mosaic))
 
-        mosaico_size = mosaico.shape[:2][::-1]
+        mosaic_size = mosaic.shape[:2][::-1]
         for idx in images_order:
             image, translation, transformation = self.get_image_data(idx)
             translation_padded = AffineTransform(translation.params + shift)
@@ -173,15 +173,15 @@ class Mosaic:
                 translation_padded, transformation, image.shape[:2]
             )
             indices = cv2.warpPerspective(
-                np.ones_like(image), centered_tf.params, mosaico_size
+                np.ones_like(image), centered_tf.params, mosaic_size
             )
             if rgb and image.ndim == 2:
                 image = np.dstack((image, image, image))
 
-            image_tf = cv2.warpPerspective(image, centered_tf.params, mosaico_size)
-            mosaico = np.where(indices > 0, image_tf, mosaico)
+            image_tf = cv2.warpPerspective(image, centered_tf.params, mosaic_size)
+            mosaic = np.where(indices > 0, image_tf, mosaic)
 
-        return mosaico
+        return mosaic
 
     def mask(self, idx, only_translation=True):
         image_1, tl_1, tf_1 = self.get_image_data(idx)
@@ -234,7 +234,7 @@ class Mosaic:
 
     def set_transforms_list(self, transforms_list: List[AffineTransform]) -> None:
         """Aplica la lista de transformaciones manteniendo el origen de coordenadas
-        constante. Al finalizar, recalcula el tamaño del mosaico."""
+        constante. Al finalizar, recalcula el tamaño del mosaic."""
 
         assert len(transforms_list) == self.n_images()
         assert all([isinstance(x, AffineTransform) for x in transforms_list])
@@ -300,7 +300,7 @@ class Mosaic:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Mosaic":
         """
-        Create a `Mosaico` object from a dictionary with primitive types. The dictionary
+        Create a `mosaic` object from a dictionary with primitive types. The dictionary
         representation must contains the following keys:
             - "images": A list of the images in the mosaic.
             - "translations": A list of translations (affine matrix).
@@ -311,7 +311,7 @@ class Mosaic:
             data (Dict[str, Any]): A dictionary representation
 
         Returns:
-            Mosaico: An instance of the `Mosaico` class.
+            mosaic: An instance of the `mosaic` class.
         """
         instance = Mosaic()
         instance.mosaic_size = tuple(data["size"])

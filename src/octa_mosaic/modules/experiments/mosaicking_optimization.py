@@ -28,7 +28,7 @@ class DEProcess(Procedure):
             de_params, bounds, fobj, fobj_args, initial_population
         )
 
-        mosaic_solution = optimization_utils.individual_to_mosaico(solution.x, mosaic)
+        mosaic_solution = optimization_utils.individual_to_mosaic(solution.x, mosaic)
         report = self.generate_report(solution)
         return mosaic_solution, report
 
@@ -71,7 +71,7 @@ class ScipyOptimizeProcedure(Procedure):
             **optimize_kwargs,
         )
 
-        mosaic_solution = optimization_utils.individual_to_mosaico(
+        mosaic_solution = optimization_utils.individual_to_mosaic(
             scipy_result.x, fobj_args[0]
         )
 

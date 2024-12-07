@@ -23,7 +23,7 @@ def get_corner(center, image_shape, corner="top_left"):
         raise ValueError("Unknown corner.")
 
 
-class Mosaico_TM_register:
+class mosaic_TM_register:
     def cc_order(self, images_list):
         warnings.warn(
             "El orden del primer par es 'arbitrario'. Mejor usar 'cc_order_new()'."
@@ -34,9 +34,9 @@ class Mosaico_TM_register:
         images_dict = {idx: image for idx, image in enumerate(images_list)}
         index_A, index_B, loc_B = self._select_first_pair(images_dict)
 
-        mosaico = Mosaic()
-        mosaico.add(images_dict[index_A])
-        mosaico.add(images_dict[index_B], loc_B)
+        mosaic = Mosaic()
+        mosaic.add(images_dict[index_A])
+        mosaic.add(images_dict[index_B], loc_B)
 
         images_order = [index_A, index_B]
         images_locations = [(0, 0), tuple(loc_B)]
@@ -45,12 +45,12 @@ class Mosaico_TM_register:
         del images_dict[index_B]
 
         while len(images_dict) > 0:
-            image_idx, location, cc = self._select_next_image(mosaico, images_dict)
+            image_idx, location, cc = self._select_next_image(mosaic, images_dict)
             location = tuple(location)
 
             images_order.append(image_idx)
             images_locations.append(location)
-            mosaico.add(images_dict[image_idx], location)
+            mosaic.add(images_dict[image_idx], location)
 
             del images_dict[image_idx]
 
@@ -64,54 +64,54 @@ class Mosaico_TM_register:
         images_dict = {idx: image for idx, image in enumerate(images_list)}
         index_A, index_B, loc_B = self._select_first_pair(images_dict)
 
-        mosaico_AB = Mosaic()
-        mosaico_AB.add(images_dict[index_A])
-        mosaico_AB.add(images_dict[index_B], loc_B)
+        mosaic_AB = Mosaic()
+        mosaic_AB.add(images_dict[index_A])
+        mosaic_AB.add(images_dict[index_B], loc_B)
 
-        mosaico_BA = Mosaic()
-        mosaico_BA.add(images_dict[index_B])
-        mosaico_BA.add(images_dict[index_A], -loc_B)
+        mosaic_BA = Mosaic()
+        mosaic_BA.add(images_dict[index_B])
+        mosaic_BA.add(images_dict[index_A], -loc_B)
 
-        #          plots.plot_mult([mosaico_AB.image(), mosaico_BA.image()], cols=2)
+        #          plots.plot_mult([mosaic_AB.image(), mosaic_BA.image()], cols=2)
 
         del images_dict[index_A]
         del images_dict[index_B]
 
         image_idx_AB, location_AB, cc_AB = self._select_next_image(
-            mosaico_AB, images_dict
+            mosaic_AB, images_dict
         )
         image_idx_BA, location_BA, cc_BA = self._select_next_image(
-            mosaico_BA, images_dict
+            mosaic_BA, images_dict
         )
 
-        mosaico_AB.add(images_dict[image_idx_AB], location_AB)
-        mosaico_BA.add(images_dict[image_idx_BA], location_BA)
+        mosaic_AB.add(images_dict[image_idx_AB], location_AB)
+        mosaic_BA.add(images_dict[image_idx_BA], location_BA)
 
-        # plots.plot_mult([mosaico_AB.image(), mosaico_BA.image()], [f"{cc_AB:.4f}, ({cc_AB > cc_BA})", f"{cc_BA:.4f}, ({cc_BA > cc_AB})"], cols=2, base_size=10)
+        # plots.plot_mult([mosaic_AB.image(), mosaic_BA.image()], [f"{cc_AB:.4f}, ({cc_AB > cc_BA})", f"{cc_BA:.4f}, ({cc_BA > cc_AB})"], cols=2, base_size=10)
         out_str = ""
         if cc_AB > cc_BA:
-            out_str += "Mosaico (AB)."
+            out_str += "mosaic (AB)."
             images_order = [index_A, index_B, image_idx_AB]
             images_locations = [(0, 0), tuple(loc_B), tuple(location_AB)]
 
             del images_dict[image_idx_AB]
-            mosaico = mosaico_AB
+            mosaic = mosaic_AB
 
         else:
-            out_str += "Mosaico (BA)."
+            out_str += "mosaic (BA)."
             images_order = [index_B, index_A, image_idx_BA]
             images_locations = [(0, 0), tuple(-loc_B), tuple(location_BA)]
 
             del images_dict[image_idx_BA]
-            mosaico = mosaico_BA
+            mosaic = mosaic_BA
 
         while len(images_dict) > 0:
-            image_idx, location, cc = self._select_next_image(mosaico, images_dict)
+            image_idx, location, cc = self._select_next_image(mosaic, images_dict)
             location = tuple(location)
 
             images_order.append(image_idx)
             images_locations.append(location)
-            mosaico.add(images_dict[image_idx], location)
+            mosaic.add(images_dict[image_idx], location)
 
             del images_dict[image_idx]
 
@@ -173,9 +173,9 @@ class Mosaico_TM_register:
         return image_idx, location, np.max(loop_cc)
 
     def mosaic_from_indices(self, images_order, locations, images_list):
-        mosaico = Mosaic()
+        mosaic = Mosaic()
 
         for image_idx, location in zip(images_order, locations):
-            mosaico.add(images_list[image_idx], location)
+            mosaic.add(images_list[image_idx], location)
 
-        return mosaico
+        return mosaic

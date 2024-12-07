@@ -5,9 +5,8 @@ import numpy as np
 
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.mosaic import Mosaic
-from octa_mosaic.modules.mosaico_TM_register import Mosaico_TM_register
 from octa_mosaic.modules.template_matching import template_matching
-from octa_mosaic.modules.utils import metrics, plots
+from octa_mosaic.modules.utils import metrics
 
 
 def get_corner(center, image_shape, corner="top_left"):
@@ -26,7 +25,7 @@ def get_corner(center, image_shape, corner="top_left"):
         raise ValueError("Unknown corner.")
 
 
-class Mosaico_TM_register_MB:
+class mosaic_TM_register_MB:
     def __init__(self, borders_width: List[int], borders_weight: List[float]):
         self.borders_width = borders_width
         self.borders_weight = borders_weight
@@ -102,29 +101,29 @@ class Mosaico_TM_register_MB:
         image_B = images_dict[index_B]
 
         # Check order
-        mosaico_AB_bin = Mosaic()
-        mosaico_AB_bin.add(image_A)
-        mosaico_AB_bin.add(image_B, loc_B)
+        mosaic_AB_bin = Mosaic()
+        mosaic_AB_bin.add(image_A)
+        mosaic_AB_bin.add(image_B, loc_B)
         CC_AB = optimization_utils.calc_metric_multiples_edges(
-            metric_func, mosaico_AB_bin, self.borders_width, self.borders_weight
+            metric_func, mosaic_AB_bin, self.borders_width, self.borders_weight
         )
 
-        mosaico_BA_bin = Mosaic()
-        mosaico_BA_bin.add(image_B)
-        mosaico_BA_bin.add(image_A, -loc_B)
+        mosaic_BA_bin = Mosaic()
+        mosaic_BA_bin.add(image_B)
+        mosaic_BA_bin.add(image_A, -loc_B)
         CC_BA = optimization_utils.calc_metric_multiples_edges(
-            metric_func, mosaico_BA_bin, self.borders_width, self.borders_weight
+            metric_func, mosaic_BA_bin, self.borders_width, self.borders_weight
         )
 
-        mosaico = Mosaic()
+        mosaic = Mosaic()
         if CC_AB > CC_BA:
-            mosaico.add(image_A)
-            mosaico.add(image_B, loc_B)
+            mosaic.add(image_A)
+            mosaic.add(image_B, loc_B)
             images_order = [index_A, index_B]
             images_locations = [(0, 0), tuple(loc_B)]
         else:
-            mosaico.add(image_B)
-            mosaico.add(image_A, -loc_B)
+            mosaic.add(image_B)
+            mosaic.add(image_A, -loc_B)
             images_order = [index_B, index_A]
             images_locations = [(0, 0), tuple(-loc_B)]
         # ----
@@ -133,12 +132,12 @@ class Mosaico_TM_register_MB:
         del images_dict[index_B]
 
         while len(images_dict) > 0:
-            image_idx, location, cc = self._select_next_image(mosaico, images_dict)
+            image_idx, location, cc = self._select_next_image(mosaic, images_dict)
             location = tuple(location)
 
             images_order.append(image_idx)
             images_locations.append(location)
-            mosaico.add(images_dict[image_idx], location)
+            mosaic.add(images_dict[image_idx], location)
 
             del images_dict[image_idx]
 
@@ -146,9 +145,9 @@ class Mosaico_TM_register_MB:
 
     @staticmethod
     def mosaic_from_indices(images_order, locations, images_list):
-        mosaico = Mosaic()
+        mosaic = Mosaic()
 
         for image_idx, location in zip(images_order, locations):
-            mosaico.add(images_list[image_idx], location)
+            mosaic.add(images_list[image_idx], location)
 
-        return mosaico
+        return mosaic
