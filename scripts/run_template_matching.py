@@ -2,6 +2,8 @@ import json
 import pickle as pkl
 from pathlib import Path
 
+from tqdm import tqdm
+
 from octa_mosaic.data import Dataset
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments.encoders import NumpyEncoder
@@ -50,7 +52,7 @@ def main():
     tm_procedure = TemplateMatchingEvaluatingEdges("template_matching_register")
     solutions_dict = {}
     reports_dict = {}
-    for case in dataset.get_cases():
+    for case in tqdm(dataset.get_cases()):
         case_id = case.get_ID()
         images_list = case.get_images()
         tm_mosaic, tm_report = tm_procedure.run(
