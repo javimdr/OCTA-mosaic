@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -11,16 +11,16 @@ class TemplateMatchingEvaluatingEdges(Procedure):
     def _execution(
         self,
         images_list: List[np.ndarray],
-        fobj_kwargs: Dict[str, Any],
+        first_pair_func: Callable = None,
+        first_pair_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Tuple[Mosaic, Report]:
 
-        # function = config["function"]
-        border_width_list = fobj_kwargs["border_width_list"]
-        border_weight_list = fobj_kwargs["border_weight_list"]
-
-        register = TemplateMatchingBuilder(border_width_list, border_weight_list)
-        images_order, images_locations = register.create_mosaic(images_list)
-        mosaic_tm = register.mosaic_from_indices(
+        register = TemplateMatchingBuilder(
+            first_pair_func=first_pair_func,
+            first_pair_kwargs=first_pair_kwargs,
+        )
+        images_order, images_locations = register.generate_mosaic_order(images_list)
+        mosaic_tm = register.mosaic_from_order(
             images_order, images_locations, images_list
         )
         report = self._generate_report(images_order, images_locations)

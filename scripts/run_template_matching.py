@@ -13,9 +13,12 @@ from octa_mosaic.utils.constants import DATASET_PATH, EXPERIMENTS_PATH
 RESULTS_FILENAME = "template_matching"
 RESULTS_PATH = EXPERIMENTS_PATH / RESULTS_FILENAME
 
-OBJECTIVE_FUNCTION = {
-    "fobj": optimization_utils.objective_function_multi_edge_optimized,
-    "args": {"border_width_list": [10, 20, 30], "border_weight_list": [0.6, 0.3, 0.1]},
+FIRST_PAIR_FUNCTION = {
+    "func": optimization_utils.multi_edge_optimized,
+    "kwargs": {
+        "borders_width": [10, 20, 30],
+        "borders_weight": [0.6, 0.3, 0.1],
+    },
 }
 
 
@@ -50,7 +53,11 @@ def main():
     for case in dataset.get_cases():
         case_id = case.get_ID()
         images_list = case.get_images()
-        tm_mosaic, tm_report = tm_procedure.run(images_list, OBJECTIVE_FUNCTION["args"])
+        tm_mosaic, tm_report = tm_procedure.run(
+            images_list,
+            first_pair_func=FIRST_PAIR_FUNCTION["func"],
+            first_pair_kwargs=FIRST_PAIR_FUNCTION["kwargs"],
+        )
         solutions_dict[case_id] = tm_mosaic.to_dict()
         reports_dict[case_id] = tm_report
 

@@ -61,7 +61,7 @@ class InitialPopulationConfig:
 
 def run_test(
     cases_list: List[DatasetCase],
-    objective_function_data: Dict[str, Any],
+    objective_function: Dict[str, Any],
     transformation_config: TransformConfig,
     initial_population_config: InitialPopulationConfig,
     de_params: DifferentialEvolutionParams,
@@ -103,12 +103,18 @@ def run_test(
 
         # 1) TM: First aproximation
         tm_mosaic, tm_report = tm_procedure.run(
-            images_list, objective_function_data["args"]
+            images_list,
+            first_pair_func=objective_function["func"],
+            first_pair_kwargs=objective_function["kwargs"],
         )
 
         # 2) DE: Optimization
-        args = objective_function_data["args"]
-        fobj_args = (tm_mosaic, args["border_width_list"], args["border_weight_list"])
+        fobj_fn = optimization_utils.as_individual_objective_function
+        fobj_args = (
+            objective_function["func"],
+            tm_mosaic,
+            *list(objective_function["kwargs"].values()),
+        )
 
         # 2.1) Bounds
         transformation_bounds = optimization_utils.affine_bounds(
@@ -140,7 +146,7 @@ def run_test(
             indvs_to_select=de_params.popsize,
             population=initial_population,
             bounds=bounds,
-            f_obj=objective_function_data["fobj"],
+            f_obj=fobj_fn,
             args=fobj_args,
             n_workers=de_params.cores,
         )
@@ -148,7 +154,7 @@ def run_test(
         # 2.3) DE Params
         de_mosaic, de_report = de_procedure.run(
             tm_mosaic,
-            objective_function_data["fobj"],
+            fobj_fn,
             fobj_args,
             bounds,
             de_params,
@@ -173,10 +179,10 @@ def main():
     }
 
     OBJECTIVE_FUNCTION = {
-        "fobj": optimization_utils.objective_function_multi_edge_optimized,
-        "args": {
-            "border_width_list": [5, 10, 15],
-            "border_weight_list": [0.33, 0.33, 0.33],
+        "func": optimization_utils.multi_edge_optimized,
+        "kwargs": {
+            "borders_width": [5, 10, 15],
+            "borders_weight": [0.33, 0.33, 0.33],
         },
     }
 
