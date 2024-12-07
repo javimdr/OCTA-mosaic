@@ -23,8 +23,8 @@ FIRST_PAIR_FUNCTION = {
 
 
 def check_output_path(output_filepath: Path) -> bool:
-    if not output_filepath.parent.exists():
-        output_filepath.parent.mkdir(parents=True)
+    if not output_filepath.exists():
+        output_filepath.mkdir(parents=True)
 
     if output_filepath.exists():
         opt = None
