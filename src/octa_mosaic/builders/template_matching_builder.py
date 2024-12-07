@@ -222,8 +222,8 @@ class TemplateMatchingBuilder:
         mosaic_BA = Mosaic()
         mosaic_BA.add(image_B)
         mosaic_BA.add(image_A, -loc_B)
-        images_order_BA = [index_A, index_B]
-        images_locations_BA = [(0, 0), tuple(loc_B)]
+        images_order_BA = [index_B, index_A]
+        images_locations_BA = [(0, 0), tuple(-loc_B)]
 
         # Calculates criteria value (greater is better)
         value_AB_option = self.first_pair_fn(mosaic_AB, **self.first_pair_kwargs)
