@@ -1,0 +1,23 @@
+{
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "always",
+    },
+    "editor.rulers": [
+        89
+    ],
+    "[python]": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "always"
+        },
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
