@@ -11,7 +11,7 @@ import yaml
 # user packages
 from octa_mosaic.data import Dataset, DatasetCase
 from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.experiments import initialize_population
+from octa_mosaic.modules.experiments import population_initializers
 from octa_mosaic.modules.experiments.encoders import NumpyEncoder
 from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
@@ -73,7 +73,7 @@ def run_test(
     image_preprocessing = ImagePreprocess(seed=de_params.seed)
     tm_procedure = TemplateMatchingEvaluatingEdges("template_matching_register")
     de_procedure = DEProcess("differential_evolution")
-    local_search = initialize_population.PopulationBasedOnLocalSearch(
+    local_search = population_initializers.PopulationBasedOnLocalSearch(
         seed=de_params.seed
     )
     for case in cases_list:
