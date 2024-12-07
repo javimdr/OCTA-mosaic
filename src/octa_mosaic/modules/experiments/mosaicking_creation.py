@@ -2,9 +2,9 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
+from octa_mosaic.builders.template_matching_builder import TemplateMatchingBuilder
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
 from octa_mosaic.modules.mosaic import Mosaic
-from octa_mosaic.modules.mosaic_tm_register_MB import mosaic_TM_register_MB
 
 
 class TemplateMatchingEvaluatingEdges(Procedure):
@@ -18,7 +18,7 @@ class TemplateMatchingEvaluatingEdges(Procedure):
         border_width_list = fobj_kwargs["border_width_list"]
         border_weight_list = fobj_kwargs["border_weight_list"]
 
-        register = mosaic_TM_register_MB(border_width_list, border_weight_list)
+        register = TemplateMatchingBuilder(border_width_list, border_weight_list)
         images_order, images_locations = register.create_mosaic(images_list)
         mosaic_tm = register.mosaic_from_indices(
             images_order, images_locations, images_list
