@@ -19,8 +19,8 @@ class TemplateMatchingEvaluatingEdges(Procedure):
         border_weight_list = fobj_kwargs["border_weight_list"]
 
         register = Mosaico_TM_register_MB(border_width_list, border_weight_list)
-        images_order, images_locations = register.edge_order(images_list)
-        mosaic_tm = register.mosaico_from_indices(
+        images_order, images_locations = register.create_mosaic(images_list)
+        mosaic_tm = register.mosaic_from_indices(
             images_order, images_locations, images_list
         )
         report = self._generate_report(images_order, images_locations)
