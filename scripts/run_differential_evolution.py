@@ -198,11 +198,11 @@ def main():
     )
 
     DE_HPARAMS = DifferentialEvolutionParams(
-        F=0.2,
-        C=0.75,
-        generations=100,
+        F=0.5,
+        C=0.9,
+        generations=25,
         strategy="rand1bin",
-        popsize=200,
+        popsize=50,
         seed=16,
         fitness_population_std_tol=0.005,
         cores=8,
@@ -223,7 +223,7 @@ def main():
     current_experiment_path.mkdir(parents=True, exist_ok=True)
 
     test_sol, test_report = run_test(
-        dataset.get_cases()[:1],
+        dataset.get_cases()[:10],
         OBJECTIVE_FUNCTION,
         TRANSFORMATION_CONFIG,
         INITIAL_POPULATION_CONFIG,
