@@ -6,6 +6,20 @@ import numpy as np
 OptimizationFunction = Callable[[np.ndarray, Sequence[Any]], float]
 
 
+def denormalize(population: np.ndarray, bounds: np.ndarray) -> np.ndarray:
+    bl, bu = np.array(bounds).T
+    diff = np.fabs(bl - bu)
+    pop_denorm = bl + population * diff
+    return pop_denorm
+
+
+def normalize(population, bounds):
+    min_b, max_b = np.array(bounds).T
+    pop_norm = (population - min_b) / (max_b - min_b)
+    pop_norm = np.clip(pop_norm, 0, 1)
+    return pop_norm
+
+
 def evaluate_population(
     population: np.ndarray,
     f_obj: OptimizationFunction,
@@ -46,15 +60,19 @@ def evaluate_population(
     return fitness_list
 
 
-def denormalize(population: np.ndarray, bounds: np.ndarray) -> np.ndarray:
-    bl, bu = np.array(bounds).T
-    diff = np.fabs(bl - bu)
-    pop_denorm = bl + population * diff
-    return pop_denorm
+def select_best_individuals(
+    indvs_to_select: int,
+    population: np.ndarray,
+    bounds: np.ndarray,
+    f_obj: Callable,
+    args: Tuple = (),
+    n_workers: int = -1,
+) -> np.ndarray:
 
+    pop_denorm = denormalize(population, bounds)
+    fitness_values = evaluate_population(pop_denorm, f_obj, args, n_workers)
 
-def normalize(population, bounds):
-    min_b, max_b = np.array(bounds).T
-    pop_norm = (population - min_b) / (max_b - min_b)
-    pop_norm = np.clip(pop_norm, 0, 1)
-    return pop_norm
+    fitness_argsort = np.argsort(fitness_values)[::-1]  # max to min
+    sorted_initial_pop = population[fitness_argsort]
+
+    return sorted_initial_pop[:indvs_to_select]

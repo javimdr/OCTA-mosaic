@@ -20,6 +20,7 @@ from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
 from octa_mosaic.modules.optimization.differential_evolution import (
     DifferentialEvolutionParams,
 )
+from octa_mosaic.modules.optimization.evaluate import select_best_individuals
 from octa_mosaic.modules.optimization.problem import TransformConfig
 from octa_mosaic.utils.constants import DATASET_PATH, EXPERIMENTS_PATH
 
@@ -135,7 +136,7 @@ def run_test(
             raise ValueError("Uknown population initializer function.")
 
         initial_population = np.vstack((x0, initial_population))  # Add TM vector
-        initial_population_filtered = initialize_population.select_best_individuals(
+        initial_population_filtered = select_best_individuals(
             indvs_to_select=de_params.popsize,
             population=initial_population,
             bounds=bounds,

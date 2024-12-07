@@ -1,8 +1,6 @@
-from typing import Callable, Optional, Tuple
+from typing import Optional
 
 import numpy as np
-
-from octa_mosaic.modules.optimization import evaluate
 
 
 class PopulationBasedOnLocalSearch:
@@ -120,21 +118,3 @@ class PopulationBasedOnLocalSearch:
                 )
 
         return np.clip(output, 0, 1)
-
-
-def select_best_individuals(
-    indvs_to_select: int,
-    population: np.ndarray,
-    bounds: np.ndarray,
-    f_obj: Callable,
-    args: Tuple = (),
-    n_workers: int = -1,
-) -> np.ndarray:
-
-    pop_denorm = evaluate.denormalize(population, bounds)
-    fitness_values = evaluate.evaluate_population(pop_denorm, f_obj, args, n_workers)
-
-    fitness_argsort = np.argsort(fitness_values)[::-1]  # max to min
-    sorted_initial_pop = population[fitness_argsort]
-
-    return sorted_initial_pop[:indvs_to_select]
