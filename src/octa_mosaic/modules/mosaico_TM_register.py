@@ -1,42 +1,10 @@
 import itertools
 import warnings
 
-import cv2
 import numpy as np
 
 from octa_mosaic.modules.mosaic import Mosaic
-from octa_mosaic.modules.utils import metrics
-
-
-def template_matching(fixed, template, corr_func="ZNCC", mode="same"):
-    """
-    Realiza el proceso de template matching empleando la función de
-    correlación seleccionada.
-
-    :param fixed: imagen estática
-    :param template: plantilla
-    :param corr_func: función de correlación. Funciones:
-        - CV: cv2.TM_CCORR_NORMED
-        - ZNCC: Zero Normalized Cross Correlation
-
-    :return: Valor máximo de correlación, su posición (esquina superior izq.)
-    en forma 'xy' y la matriz de correlación.
-    """
-    _CCORR_FUNCTIONS = ["CV", "ZNCC"]
-
-    if corr_func == "CV":
-        ccorr_matrix = cv2.matchTemplate(
-            fixed.astype("float32"), template.astype("float32"), cv2.TM_CCORR_NORMED
-        )
-    elif corr_func == "ZNCC":
-        ccorr_matrix = metrics.normxcorr2(fixed, template, mode)
-    else:
-        raise ValueError(
-            f"Invalid correlation function. Use one of this: {_CCORR_FUNCTIONS}"
-        )
-
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(ccorr_matrix)  # type: ignore
-    return max_val, max_loc, ccorr_matrix
+from octa_mosaic.modules.template_matching import template_matching
 
 
 def get_corner(center, image_shape, corner="top_left"):
