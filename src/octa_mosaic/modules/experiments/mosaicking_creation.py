@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
-from octa_mosaic.modules.mosaico import Mosaico
+from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.mosaico_tm_register_MB import Mosaico_TM_register_MB
 
 
@@ -12,7 +12,7 @@ class TemplateMatchingEvaluatingEdges(Procedure):
         self,
         images_list: List[np.ndarray],
         fobj_kwargs: Dict[str, Any],
-    ) -> Tuple[Mosaico, Report]:
+    ) -> Tuple[Mosaic, Report]:
 
         # function = config["function"]
         border_width_list = fobj_kwargs["border_width_list"]
@@ -40,8 +40,8 @@ class TemplateMatchingEvaluatingEdges(Procedure):
         return {"images_order": data}
 
     @staticmethod
-    def mosaic_from_report(images_list: List[np.ndarray], report: Report) -> Mosaico:
-        mosaico = Mosaico()
+    def mosaic_from_report(images_list: List[np.ndarray], report: Report) -> Mosaic:
+        mosaico = Mosaic()
 
         for image_data in report["images_order"]:
             image = images_list[image_data["index"]]

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.mosaico import Mosaico
+from octa_mosaic.modules.mosaic import Mosaic
 
 
 @dataclass(frozen=True)
@@ -16,10 +16,10 @@ class TransformConfig:
 
 @dataclass
 class MosaicProblem:
-    mosaic: Mosaico
+    mosaic: Mosaic
     bounds: np.ndarray
 
-    def __init__(self, mosaic: Mosaico, transform_config: TransformConfig):
+    def __init__(self, mosaic: Mosaic, transform_config: TransformConfig):
         self.mosaic = mosaic
         self.n_var = mosaic.n_images() * 6
 

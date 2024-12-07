@@ -7,7 +7,7 @@ import numpy as np
 from skimage.transform import AffineTransform
 
 
-class Mosaico:
+class Mosaic:
     def __init__(self):
         self.images_list = []
         self.translations_list = []
@@ -16,7 +16,7 @@ class Mosaico:
         self.mosaic_size = (0, 0)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Mosaico):
+        if not isinstance(other, Mosaic):
             return False
 
         if tuple(self.mosaic_size) != tuple(other.mosaic_size):
@@ -43,8 +43,8 @@ class Mosaico:
 
         return True
 
-    def copy(self) -> "Mosaico":
-        new_mosaico = Mosaico()
+    def copy(self) -> "Mosaic":
+        new_mosaico = Mosaic()
 
         new_mosaico.images_list = deepcopy(self.images_list)
         new_mosaico.translations_list = deepcopy(self.translations_list)
@@ -298,7 +298,7 @@ class Mosaico:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Mosaico":
+    def from_dict(cls, data: Dict[str, Any]) -> "Mosaic":
         """
         Create a `Mosaico` object from a dictionary with primitive types. The dictionary
         representation must contains the following keys:
@@ -313,7 +313,7 @@ class Mosaico:
         Returns:
             Mosaico: An instance of the `Mosaico` class.
         """
-        instance = Mosaico()
+        instance = Mosaic()
         instance.mosaic_size = tuple(data["size"])
         instance.images_list = [np.array(image, "uint8") for image in data["images"]]
         instance.translations_list = [

@@ -9,7 +9,7 @@ import seaborn as sns
 from skimage.transform import AffineTransform
 
 from octa_mosaic.modules.evolutionary import init_population_lhs
-from octa_mosaic.modules.mosaico import Mosaico
+from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.utils import metrics
 
 
@@ -149,7 +149,7 @@ def tf_matrix_to_tf_repr(tf_matrix: AffineTransform) -> np.ndarray:
     return np.array([tx, ty, sx, sy, rot, shear], "float32")
 
 
-def individual_to_mosaico(individual: np.ndarray, mosaico: Mosaico) -> Mosaico:
+def individual_to_mosaico(individual: np.ndarray, mosaico: Mosaic) -> Mosaic:
     n_images = len(mosaico.images_list)
     new_mosaico = mosaico.copy()
 
@@ -162,7 +162,7 @@ def individual_to_mosaico(individual: np.ndarray, mosaico: Mosaico) -> Mosaico:
     return new_mosaico
 
 
-def get_images_and_masks_list(mosaico: Mosaico):
+def get_images_and_masks_list(mosaico: Mosaic):
     n_images = mosaico.n_images()
     mosaico_size = mosaico.mosaic_size
 
@@ -211,7 +211,7 @@ def calc_border_of_overlap(fg, bg, border_px=10):
 
 # ======== Funciones objetivo ========
 def calc_CC_on_overlaps_and_areas(
-    mosaico: Mosaico, border_px: int = 10, min_area: int = 0
+    mosaico: Mosaic, border_px: int = 10, min_area: int = 0
 ) -> Tuple[np.ndarray, np.ndarray]:
     """_summary_
 
@@ -287,7 +287,7 @@ def func_objetivo_borde_weighted_sum(individual, mosaico, border_px=10):
 
 
 def objective_function_multi_edge(
-    individual: np.ndarray, mosaico: Mosaico, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -316,7 +316,7 @@ def objective_function_edge_geometric_mean(individual, mosaico, border_px=10):
 
 
 def objective_function_multi_edge_geometric_mean(
-    individual: np.ndarray, mosaico: Mosaico, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -348,7 +348,7 @@ def objective_function_edge_geometric_mean_v2(individual, mosaico, border_px=10)
 
 
 def objective_function_multi_edge_geometric_mean_v2(
-    individual: np.ndarray, mosaico: Mosaico, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -409,7 +409,7 @@ def func_objetivo_edge_dice(individual, base_mosaico, border_px=10):
 
 def calc_metric_edge(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
-    mosaico: Mosaico,
+    mosaico: Mosaic,
     border_px: int = 10,
     boder_size_th: int = 0,
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -449,7 +449,7 @@ def calc_metric_edge(
 
 def calc_metric_multiples_edges(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
-    mosaico: Mosaico,
+    mosaico: Mosaic,
     borders_width: List[int],
     borders_weight: List[float],
     boder_size_th: int = 0,
@@ -541,7 +541,7 @@ def calc_zncc_on_overlaps(
 
 # TODO: Revisar
 def objective_function_multi_edge_optimized(
-    individual: np.ndarray, mosaico: Mosaico, borders_width: list, borders_weight: list
+    individual: np.ndarray, mosaico: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -551,7 +551,7 @@ def objective_function_multi_edge_optimized(
 
 
 def multi_edge_optimized(
-    mosaico: Mosaico, borders_width: list, borders_weight: list
+    mosaico: Mosaic, borders_width: list, borders_weight: list
 ) -> float:
 
     assert len(borders_width) == len(borders_weight)
@@ -577,7 +577,7 @@ def multi_edge_optimized(
 
 
 def objective_function_seamline_zncc(
-    individual: np.ndarray, mosaico: Mosaico, border_width: int
+    individual: np.ndarray, mosaico: Mosaic, border_width: int
 ) -> float:
     """
     Calcula el valor de ZNCC.
@@ -586,7 +586,7 @@ def objective_function_seamline_zncc(
     return seamline_zncc(current_mosaico, border_width)
 
 
-def seamline_zncc(mosaico: Mosaico, border_width: int) -> float:
+def seamline_zncc(mosaico: Mosaic, border_width: int) -> float:
     images_list, masks_list = get_images_and_masks_list(mosaico)
 
     overlaps_list = calc_overlaps(masks_list, border_width)

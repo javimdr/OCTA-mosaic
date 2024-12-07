@@ -5,7 +5,7 @@ import scipy.optimize
 
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
-from octa_mosaic.modules.mosaico import Mosaico
+from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.optimization.differential_evolution import (
     DifferentialEvolutionParams,
     differential_evolution_from_params,
@@ -16,13 +16,13 @@ from octa_mosaic.modules.optimization.optimize_result import OptimizeResult
 class DEProcess(Procedure):
     def _execution(
         self,
-        mosaic: Mosaico,
+        mosaic: Mosaic,
         fobj: Callable,
         fobj_args: Sequence[Any],
         bounds: np.ndarray,
         de_params: DifferentialEvolutionParams,
         initial_population: Optional[np.ndarray] = None,
-    ) -> Tuple[Mosaico, Report]:
+    ) -> Tuple[Mosaic, Report]:
 
         solution = differential_evolution_from_params(
             de_params, bounds, fobj, fobj_args, initial_population
@@ -61,7 +61,7 @@ class ScipyOptimizeProcedure(Procedure):
         fobj: Callable,
         fobj_args: Sequence[Any] = (),
         **optimize_kwargs,
-    ) -> Tuple[Mosaico, Report]:
+    ) -> Tuple[Mosaic, Report]:
 
         scipy_result = scipy.optimize.minimize(
             fun=minimization_fobj,

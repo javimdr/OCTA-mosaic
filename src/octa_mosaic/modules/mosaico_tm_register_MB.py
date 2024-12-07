@@ -3,7 +3,7 @@ from typing import Callable, List, Optional, Tuple
 import numpy as np
 
 from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.mosaico import Mosaico
+from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.mosaico_TM_register import Mosaico_TM_register
 from octa_mosaic.modules.utils import metrics, plots
 
@@ -34,14 +34,14 @@ class Mosaico_TM_register_MB(Mosaico_TM_register):
         image_B = images_dict[index_B]
 
         # Check order
-        mosaico_AB_bin = Mosaico()
+        mosaico_AB_bin = Mosaic()
         mosaico_AB_bin.add(image_A)
         mosaico_AB_bin.add(image_B, loc_B)
         CC_AB = optimization_utils.calc_metric_multiples_edges(
             metric_func, mosaico_AB_bin, self.borders_width, self.borders_weight
         )
 
-        mosaico_BA_bin = Mosaico()
+        mosaico_BA_bin = Mosaic()
         mosaico_BA_bin.add(image_B)
         mosaico_BA_bin.add(image_A, -loc_B)
         CC_BA = optimization_utils.calc_metric_multiples_edges(
@@ -66,7 +66,7 @@ class Mosaico_TM_register_MB(Mosaico_TM_register):
                 base_size=10,
             )
 
-        mosaico = Mosaico()
+        mosaico = Mosaic()
         if CC_AB > CC_BA:
             mosaico.add(image_A)
             mosaico.add(image_B, loc_B)

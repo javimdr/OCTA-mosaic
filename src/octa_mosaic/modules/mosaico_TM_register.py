@@ -4,7 +4,7 @@ import warnings
 import cv2
 import numpy as np
 
-from octa_mosaic.modules.mosaico import Mosaico
+from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.utils import metrics
 
 
@@ -66,7 +66,7 @@ class Mosaico_TM_register:
         images_dict = {idx: image for idx, image in enumerate(images_list)}
         index_A, index_B, loc_B = self._select_first_pair(images_dict)
 
-        mosaico = Mosaico()
+        mosaico = Mosaic()
         mosaico.add(images_dict[index_A])
         mosaico.add(images_dict[index_B], loc_B)
 
@@ -96,11 +96,11 @@ class Mosaico_TM_register:
         images_dict = {idx: image for idx, image in enumerate(images_list)}
         index_A, index_B, loc_B = self._select_first_pair(images_dict)
 
-        mosaico_AB = Mosaico()
+        mosaico_AB = Mosaic()
         mosaico_AB.add(images_dict[index_A])
         mosaico_AB.add(images_dict[index_B], loc_B)
 
-        mosaico_BA = Mosaico()
+        mosaico_BA = Mosaic()
         mosaico_BA.add(images_dict[index_B])
         mosaico_BA.add(images_dict[index_A], -loc_B)
 
@@ -205,7 +205,7 @@ class Mosaico_TM_register:
         return image_idx, location, np.max(loop_cc)
 
     def mosaico_from_indices(self, images_order, locations, images_list):
-        mosaico = Mosaico()
+        mosaico = Mosaic()
 
         for image_idx, location in zip(images_order, locations):
             mosaico.add(images_list[image_idx], location)
