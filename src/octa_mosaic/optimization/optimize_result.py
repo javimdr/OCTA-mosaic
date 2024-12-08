@@ -5,29 +5,28 @@ import numpy as np
 
 
 @dataclass
-class OptimizeResult(dict):
-    """Result of an optimization algorithm.
+class OptimizeResult:
+    """
+    Represents the result of an optimization algorithm.
 
-    Args:
-        x (ndarray): The vector solution of the optimizer.
-        fitness (float): The fitness value of the vector solution.
-        message (str, optional): Message with the cause of the optimizer termination.
-        nit (int): Number of iterations performed by the optimizer.
+    Attributes:
+        x (np.ndarray): The best solution vector found by the optimizer.
+        fitness (float): The fitness value of the solution vector.
+        execution_time (float, optional): The time taken to complete the optimization
+            process, in seconds.
+        nits (int, optional): The number of iterations performed by the optimizer.
+        last_population (np.ndarray, optional): The last population of solutions
+            evaluated by the optimizer.
+        message (str, optional): A message describing the reason for the optimizer's
+            termination or other details.
     """
 
     x: np.ndarray
     fitness: float
-    message: Optional[str] = None
+    execution_time: Optional[float] = None
     nits: Optional[int] = None
-
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(name) from e
-
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+    last_population: Optional[np.ndarray] = None
+    message: Optional[str] = None
 
     def __repr__(self):
         return f"{self.__class__.__name__}(fitness={self.fitness:.4f})"

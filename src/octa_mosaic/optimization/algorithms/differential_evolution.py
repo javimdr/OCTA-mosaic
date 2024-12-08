@@ -578,11 +578,11 @@ class DifferentialEvolution:
         result = OptimizeResult(
             x=self._denorm(self.population[self.best_idx]),
             fitness=self.fitness_values[self.best_idx],
-            message=status_message,
+            execution_time=end_time - start_time,
             nits=nit,
+            message=status_message,
         )
 
-        result.execution_time = end_time - start_time
         result.last_population = self._denorm(self.population)
 
         return result
