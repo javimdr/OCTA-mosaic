@@ -2,9 +2,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from octa_mosaic.builders.template_matching_builder import TemplateMatchingBuilder
+from octa_mosaic import Mosaic, TemplateMatchingBuilder
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
-from octa_mosaic.mosaic.mosaic import Mosaic
 
 
 class TemplateMatchingEvaluatingEdges(Procedure):
