@@ -24,3 +24,22 @@ def dilate_mask(mask, pixels=10):
     kernel = np.ones((k_size, k_size))
 
     return cv2.dilate(mask.astype("float32"), kernel, iterations=1).astype(bool)
+
+
+def crop_image(image: np.ndarray, px: int) -> np.ndarray:
+    return image[px:-px, px:-px]
+
+
+def add_gaussian_noise(image: np.ndarray, sigma: float) -> np.ndarray:
+    noise = np.random.normal(0, sigma, image.shape)
+    noisy_image = np.clip(image + noise, 0, 255).astype(np.uint8)
+    return noisy_image
+
+
+def add_salt_pepper_noise(image: np.ndarray, prob: float) -> np.ndarray:
+    noisy_image = np.copy(image)
+    salt_mask = np.random.rand(*image.shape) < (prob / 2)
+    pepper_mask = np.random.rand(*image.shape) < (prob / 2)
+    noisy_image[salt_mask] = 255
+    noisy_image[pepper_mask] = 0
+    return noisy_image

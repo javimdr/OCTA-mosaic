@@ -13,6 +13,7 @@ from octa_mosaic.experiments.constants import DATASET_PATH, EXPERIMENTS_PATH
 # user packages
 from octa_mosaic.experiments.data import Dataset, DatasetCase
 from octa_mosaic.experiments.encoders import NumpyEncoder
+from octa_mosaic.image_utils import image_operations
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments import population_initializers
 from octa_mosaic.modules.experiments.mosaicking_creation import (
@@ -24,28 +25,6 @@ from octa_mosaic.modules.optimization.differential_evolution import (
 )
 from octa_mosaic.modules.optimization.evaluate import select_best_individuals
 from octa_mosaic.modules.optimization.problem import TransformConfig
-
-
-# TODO: Move to a module
-class ImagePreprocess:
-    def __init__(self, seed: Optional[int] = None) -> None:
-        self._rng = np.random.RandomState(seed)
-
-    def crop(self, image: np.ndarray, px: int) -> np.ndarray:
-        return image[px:-px, px:-px]
-
-    def add_gaussian_noise(self, image: np.ndarray, sigma: float) -> np.ndarray:
-        noise = self._rng.normal(0, sigma, image.shape)
-        noisy_image = np.clip(image + noise, 0, 255).astype(np.uint8)
-        return noisy_image
-
-    def add_salt_pepper_noise(self, image: np.ndarray, prob: float) -> np.ndarray:
-        noisy_image = np.copy(image)
-        salt_mask = self._rng.rand(*image.shape) < (prob / 2)
-        pepper_mask = self._rng.rand(*image.shape) < (prob / 2)
-        noisy_image[salt_mask] = 255
-        noisy_image[pepper_mask] = 0
-        return noisy_image
 
 
 # TODO: Move to a module
@@ -71,7 +50,7 @@ def run_test(
     solutions_dict = {}
     reports_dict = {}
 
-    image_preprocessing = ImagePreprocess(seed=de_params.seed)
+    np.random.seed(de_params.seed)
     tm_procedure = TemplateMatchingEvaluatingEdges("template_matching_register")
     de_procedure = DEProcess("differential_evolution")
     local_search = population_initializers.PopulationBasedOnLocalSearch(
@@ -82,7 +61,7 @@ def run_test(
         images_list = case.get_images()
         if image_preprocess_config["gaussian_sigma"] > 0:
             images_list = [
-                image_preprocessing.add_gaussian_noise(
+                image_operations.add_gaussian_noise(
                     img, image_preprocess_config["gaussian_sigma"]
                 )
                 for img in images_list
@@ -90,7 +69,7 @@ def run_test(
 
         if image_preprocess_config["salt_paper_prob"] > 0:
             images_list = [
-                image_preprocessing.add_salt_pepper_noise(
+                image_operations.add_salt_pepper_noise(
                     img, image_preprocess_config["salt_paper_prob"]
                 )
                 for img in images_list
@@ -98,7 +77,7 @@ def run_test(
 
         if image_preprocess_config["crop_px"] > 0:
             images_list = [
-                image_preprocessing.crop(img, image_preprocess_config["crop_px"])
+                image_operations.crop_image(img, image_preprocess_config["crop_px"])
                 for img in images_list
             ]
 
