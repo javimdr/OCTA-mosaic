@@ -23,7 +23,7 @@ from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
 from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
 )
-from octa_mosaic.optimization.evaluate import select_best_individuals
+from octa_mosaic.optimization.population_utils import select_best_individuals
 from octa_mosaic.optimization.problem import TransformConfig
 
 

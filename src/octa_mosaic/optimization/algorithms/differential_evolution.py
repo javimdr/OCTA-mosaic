@@ -7,7 +7,7 @@ from warnings import warn
 import numpy as np
 from tqdm import tqdm
 
-from octa_mosaic.optimization import evaluate
+from octa_mosaic.optimization import population_utils
 from octa_mosaic.optimization.iteration_state import IterationState
 from octa_mosaic.optimization.optimize_result import OptimizeResult
 
@@ -457,7 +457,7 @@ class DifferentialEvolution:
 
         population_denorm = self._denorm(population)
 
-        fitness_list = evaluate.evaluate_population(
+        fitness_list = population_utils.evaluate_population(
             population_denorm, self.fobj, self.fobj_args, n_workers
         )
 
