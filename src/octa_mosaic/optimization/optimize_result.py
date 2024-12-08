@@ -4,8 +4,8 @@ from typing import Optional
 import numpy as np
 
 
-@dataclass(frozen=True)
-class OptimizeResult:
+@dataclass
+class OptimizeResult(dict):
     """Result of an optimization algorithm.
 
     Args:
@@ -19,3 +19,15 @@ class OptimizeResult:
     fitness: float
     message: Optional[str] = None
     nits: Optional[int] = None
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(fitness={self.fitness:.4f})"
