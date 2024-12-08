@@ -20,7 +20,7 @@ from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
-from octa_mosaic.mosaic.transforms.transform_config import AffineTransformBounds
+from octa_mosaic.mosaic.transforms.affine_transform_bounds import AffineTransformBounds
 from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
 )
