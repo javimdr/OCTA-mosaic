@@ -8,7 +8,7 @@ import numpy as np
 import seaborn as sns
 from skimage.transform import AffineTransform
 
-from octa_mosaic.image_utils import image_metrics
+from octa_mosaic.image_utils import image_similarity
 from octa_mosaic.modules.evolutionary import init_population_lhs
 from octa_mosaic.mosaic.mosaic import Mosaic
 
@@ -247,7 +247,7 @@ def calc_CC_on_overlaps_and_areas(
         border_size_list[idx - 1] = border_size
 
         if border_size > min_area:
-            CC_list[idx - 1] = image_metrics.zncc(
+            CC_list[idx - 1] = image_similarity.zncc(
                 fg_image[border_iou].ravel(), bg_image[border_iou].ravel()
             )
         else:  # border_size == 0:
@@ -382,7 +382,7 @@ def calc_dice_and_areas(mosaic, border_px=10, boder_size_th=0):
         border_size_list[idx - 1] = boder_size
 
         if boder_size > boder_size_th:
-            CC_list[idx - 1] = image_metrics.zncc(
+            CC_list[idx - 1] = image_similarity.zncc(
                 fg_image[border_iou].ravel(), bg_image[border_iou].ravel()
             )
 
@@ -521,7 +521,7 @@ def calc_zncc_on_overlaps(
         border_size_list[idx - 1] = overlap_size
 
         if overlap_size > 0:
-            CC_list[idx - 1] = image_metrics.zncc(
+            CC_list[idx - 1] = image_similarity.zncc(
                 fg_image[overlap].ravel(), bg_image[overlap].ravel()
             )
         else:  # border_size == 0:

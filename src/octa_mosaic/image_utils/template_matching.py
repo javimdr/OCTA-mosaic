@@ -3,7 +3,7 @@ from typing import Literal
 import cv2
 import numpy as np
 
-from octa_mosaic.modules.utils import metrics
+from octa_mosaic.image_utils import image_similarity
 
 
 def template_matching(
@@ -38,7 +38,7 @@ def template_matching(
             fixed.astype("float32"), template.astype("float32"), cv2.TM_CCORR_NORMED
         )
     elif corr_func == "ZNCC":
-        ccorr_matrix = metrics.normxcorr2(fixed, template, mode)
+        ccorr_matrix = image_similarity.normxcorr2(fixed, template, mode)
     else:
         raise ValueError(
             f"Invalid correlation function. Use one of this: {_CCORR_FUNCTIONS}"
