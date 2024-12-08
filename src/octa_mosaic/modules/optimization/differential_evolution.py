@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Sequence, Tuple
+from typing import Any, Callable, Iterable, Optional, Sequence, Tuple
 from warnings import warn
 
 import numpy as np
@@ -10,7 +10,6 @@ from tqdm import tqdm
 from octa_mosaic.modules.optimization import evaluate
 from octa_mosaic.modules.optimization.iteration_state import IterationState
 from octa_mosaic.modules.optimization.optimize_result import OptimizeResult
-from octa_mosaic.modules.utils import metrics
 
 CallbackFunction = Callable[[IterationState], bool]
 
@@ -493,7 +492,7 @@ class DifferentialEvolution:
             best_individual = self.population[self.best_idx]
             if np.all(
                 [
-                    metrics.euclidean_dist(best_individual, individual) < self.max_dist
+                    euclidean_dist(best_individual, individual) < self.max_dist
                     for individual in self.population
                 ]
             ):
@@ -587,3 +586,17 @@ class DifferentialEvolution:
         result.last_population = self._denorm(self.population)
 
         return result
+
+
+def euclidean_dist(p: Iterable[float], q: Iterable[float]) -> float:
+    """Compute euclidean distance between P and Q.
+
+    Args:
+        p (Iterable[float]): 1D array
+        q (Iterable[float]): 1D array
+
+    Returns:
+        float: euclidean distance between P and Q
+
+    """
+    return np.linalg.norm(np.subtract(p, q))
