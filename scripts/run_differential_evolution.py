@@ -8,10 +8,11 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import yaml
 
+from octa_mosaic.experiments.constants import DATASET_PATH, EXPERIMENTS_PATH
+
 # user packages
 from octa_mosaic.experiments.data import Dataset, DatasetCase
 from octa_mosaic.experiments.encoders import NumpyEncoder
-from octa_mosaic.experiments.utils.constants import DATASET_PATH, EXPERIMENTS_PATH
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments import population_initializers
 from octa_mosaic.modules.experiments.mosaicking_creation import (
