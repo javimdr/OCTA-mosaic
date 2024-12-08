@@ -15,12 +15,14 @@ from octa_mosaic.experiments.data import Dataset, DatasetCase
 from octa_mosaic.experiments.encoders import NumpyEncoder
 from octa_mosaic.image_utils import image_operations
 from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.experiments import population_initializers
 from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
 from octa_mosaic.mosaic.transforms.affine_transform_bounds import AffineTransformBounds
+from octa_mosaic.mosaic.transforms.tf_population_initializers import (
+    TFPopulationInitializer,
+)
 from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
 )
@@ -55,9 +57,7 @@ def run_test(
     np.random.seed(de_params.seed)
     tm_procedure = TemplateMatchingEvaluatingEdges("template_matching_register")
     de_procedure = DEProcess("differential_evolution")
-    local_search = population_initializers.PopulationBasedOnLocalSearch(
-        seed=de_params.seed
-    )
+    local_search = TFPopulationInitializer(seed=de_params.seed)
     for case in cases_list:
         # 0) Get images from case and preprocess
         images_list = case.get_images()
@@ -107,11 +107,11 @@ def run_test(
         x0 = np.ones(tm_mosaic.n_images() * 6) * 0.5
 
         if initial_population_config.function == "tf_level_single_gen":
-            initial_population = local_search.tf_level_single_gen(
+            initial_population = local_search.mutate_single_tf_gen(
                 tm_mosaic.n_images(), **initial_population_config.fun_params()
             )
         elif initial_population_config.function == "tf_level":
-            initial_population = local_search.tf_level(
+            initial_population = local_search.mutate_all_tfs(
                 tm_mosaic.n_images(), **initial_population_config.fun_params()
             )
         else:

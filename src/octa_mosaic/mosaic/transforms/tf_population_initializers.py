@@ -3,7 +3,8 @@ from typing import Optional
 import numpy as np
 
 
-class PopulationBasedOnLocalSearch:
+class TFPopulationInitializer:
+
     def __init__(self, seed: Optional[int] = None, transformation_len: int = 6):
         """
         Local search population initializers.
@@ -25,7 +26,7 @@ class PopulationBasedOnLocalSearch:
         self.seed = seed
         self.transformation_len = transformation_len
 
-    def tf_level_single_gen(
+    def mutate_single_tf_gen(
         self, n_transformations: int, popsize: int, x: float, sigma: float = 0.125
     ) -> np.ndarray:
         """
@@ -81,7 +82,7 @@ class PopulationBasedOnLocalSearch:
 
         return np.clip(output, 0, 1)
 
-    def tf_level(
+    def mutate_all_tfs(
         self,
         n_transformations: int,
         popsize: int,
