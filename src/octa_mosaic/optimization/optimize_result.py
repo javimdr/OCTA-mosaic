@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 
 
-@dataclass
+@dataclass(frozen=True)
 class OptimizeResult:
     """Result of an optimization algorithm.
 
