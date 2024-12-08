@@ -5,9 +5,9 @@ from pathlib import Path
 from tqdm import tqdm
 
 from octa_mosaic.experiments.data import Dataset
+from octa_mosaic.experiments.encoders import NumpyEncoder
 from octa_mosaic.experiments.utils.constants import DATASET_PATH, EXPERIMENTS_PATH
 from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.experiments.encoders import NumpyEncoder
 from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
