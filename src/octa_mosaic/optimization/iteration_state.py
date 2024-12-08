@@ -6,6 +6,19 @@ import numpy as np
 
 @dataclass(frozen=True)
 class IterationState:
+    """
+    Represents the state of an optimization process at a single iteration.
+
+    Attributes:
+        it (int): The current iteration number.
+        population (np.ndarray): The population of candidate solutions at the current
+            iteration.
+        population_fitness (np.ndarray): The fitness values corresponding to the
+            population.
+        idx_best_solution (int): The index of the best solution in the population based
+            on fitness.
+    """
+
     it: int
     population: np.ndarray
     population_fitness: np.ndarray
@@ -13,10 +26,12 @@ class IterationState:
 
     @property
     def x(self) -> np.ndarray:
+        """Current best solution vector"""
         return self.population[self.idx_best_solution]
 
     @property
     def fitness(self) -> float:
+        """Fitness value of the best solution vector"""
         return self.population_fitness[self.idx_best_solution]
 
     @classmethod
