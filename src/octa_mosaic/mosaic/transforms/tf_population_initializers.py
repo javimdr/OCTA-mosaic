@@ -1,34 +1,79 @@
+from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 import numpy as np
 
 
+class InitializerType(Enum):
+    MUTATE_SINGLE_TF_GEN = "mutate_single_tf_gen"
+    MUTATE_ALL_TFS = "mutate_all_tfs"
+
+
+@dataclass
+class PopulationInitializerConfig:
+    """
+    Local search population initializers config.
+
+    Attributes:
+        popsize (int): Number of individuals to create. By default, 100.
+        transformation_len (int): The length of each transformation in the
+            individual. Defaults to 6.
+        mutation_factor (float): Mutation probability factor.
+        sigma (float, optional): Standard deviation of the normal distribution.
+            Defaults to 0.125.
+        seed (int, optional): Random seed for reproducibility. Defaults to None.
+    """
+
+    popsize: int = 100
+    transformation_len: int = 6
+    mutation_factor: float = 1.5
+    sigma: float = 0.125
+    seed: Optional[int] = None
+
+
+@dataclass
 class TFPopulationInitializer:
+    """
+    Local search population initializers.
 
-    def __init__(self, seed: Optional[int] = None, transformation_len: int = 6):
-        """
-        Local search population initializers.
+    These methods generates populations of individuals normalized in the range [0, 1].
+    Each individual is initialized as a vector of `0.5`, which corresponds to
+    keeping the original transformation values (no modification). This class apply
+    different local search methods around this initial vector, applying mutations
+    to generate diverse populations.
 
-        This class generates populations of individuals normalized in the range [0, 1].
-        Each individual is initialized as a vector of `0.5`, which corresponds to
-        keeping the original transformation values (no modification). This class apply
-        different local search methods around this initial vector, applying mutations
-        to generate diverse populations.
+    Mutation is performed by adding values sampled from a Gaussian distribution with
+    mean `0` and standard deviation `sigma`.
 
-        Mutation is performed by adding values sampled from a Gaussian distribution with
-        mean `0` and standard deviation `sigma`.
+    Attributes:
+        popsize (int): Number of individuals to create. By default, 100.
+        transformation_len (int): The length of each transformation in the
+            individual. Defaults to 6.
+        mutation_factor (float): Mutation probability factor.
+        sigma (float, optional): Standard deviation of the normal distribution.
+            Defaults to 0.125.
+        seed (int, optional): Random seed for reproducibility. Defaults to None.
+    """
 
-        Args:
-            seed (int, optional): Random seed for reproducibility. Defaults to None.
-            transformation_len (int): The length of each transformation in the
-                individual. Defaults to 6.
-        """
-        self.seed = seed
-        self.transformation_len = transformation_len
+    popsize: int = 100
+    transformation_len: int = 6
+    mutation_factor: float = 1.5
+    sigma: float = 0.125
+    seed: Optional[int] = None  # RandomState should be created in init
 
-    def mutate_single_tf_gen(
-        self, n_transformations: int, popsize: int, x: float, sigma: float = 0.125
+    def apply(
+        self, initializer_type: InitializerType, n_transformations: int
     ) -> np.ndarray:
+        if initializer_type == InitializerType.MUTATE_SINGLE_TF_GEN:
+            return self.mutate_single_tf_gen(n_transformations)
+
+        elif initializer_type == InitializerType.MUTATE_ALL_TFS:
+            return self.mutate_all_tfs(n_transformations)
+
+        raise ValueError(f"Unknown initializer type `{initializer_type}`")
+
+    def mutate_single_tf_gen(self, n_transformations: int) -> np.ndarray:
         """
         Generates the population by modifying a single gene of certain transformations
         within each individual.
@@ -38,14 +83,10 @@ class TFPopulationInitializer:
         alter ONLY one gene.
 
         Mutation probability is defined as:
-            P_mut = x / n_transformations
+            P_mut = mutation_factor / n_transformations
 
         Args:
             n_transformations (int): Number of transformations per individual.
-            popsize (int): Number of individuals to create.
-            x (float): Mutation probability, expressed as P_mut = x / n_transformations.
-            sigma (float, optional): Standard deviation of the normal distribution.
-                Defaults to 0.125.
 
         Returns:
             np.ndarray: Population of shape (popsize, n_transformations * transformation_len).
@@ -54,14 +95,13 @@ class TFPopulationInitializer:
 
         n_gens = n_transformations * self.transformation_len
         individual_identity = np.ones(n_gens) * 0.5
-        prob_mut = x / n_transformations
+        prob_mut = self.mutation_factor / n_transformations
 
-        output = np.tile(individual_identity, (popsize, 1)).astype(
-            "float32"
-        )  # Replicate `x` n times
-        assert output.shape == (popsize, n_gens)
+        # Replicate `x` n times
+        output = np.tile(individual_identity, (self.popsize, 1)).astype("float32")
+        assert output.shape == (self.popsize, n_gens)
 
-        for individual_i in range(popsize):
+        for individual_i in range(self.popsize):
             tfs_to_mutate = rng.rand(n_transformations) <= prob_mut
 
             # Assert at least 1 tf is going to be mutated
@@ -78,17 +118,11 @@ class TFPopulationInitializer:
                 tf_end_idx = tf_start_idx + self.transformation_len
                 gene_to_mute = rng.randint(tf_start_idx, tf_end_idx)
 
-                output[individual_i][gene_to_mute] += rng.normal(0, sigma)
+                output[individual_i][gene_to_mute] += rng.normal(0, self.sigma)
 
         return np.clip(output, 0, 1)
 
-    def mutate_all_tfs(
-        self,
-        n_transformations: int,
-        popsize: int,
-        x: float,
-        sigma: float = 0.125,
-    ) -> np.ndarray:
+    def mutate_all_tfs(self, n_transformations: int) -> np.ndarray:
         """
         Generates the population by homogeneously modifying all transformations
         within each individual.
@@ -101,14 +135,10 @@ class TFPopulationInitializer:
         with zero mean and standard deviation `sigma`.
 
         Mutation probability is defined as:
-            P_mut = x / transformation_len, where transformation_len = 6
+            P_mut = mutation_factor / transformation_len
 
         Args:
             n_transformations (int): Number of transformations per individual.
-            popsize (int): Number of individuals to create.
-            x (float): Mutation probability, expressed as P_mut = x / transformation_len.
-            sigma (float, optional): Standard deviation of the normal distribution.
-                Defaults to 0.125.
 
         Returns:
             np.ndarray: Population of shape (popsize, n_transformations * transformation_len).
@@ -116,12 +146,12 @@ class TFPopulationInitializer:
         rng = np.random.RandomState(self.seed)
 
         n_gens = n_transformations * self.transformation_len
-        prob_mut = x / self.transformation_len
+        prob_mut = self.mutation_factor / self.transformation_len
 
         tf_identity = np.ones(self.transformation_len) * 0.5
-        output = np.zeros((popsize, n_gens), "float32")
+        output = np.zeros((self.popsize, n_gens), "float32")
 
-        for individual_i in range(popsize):
+        for individual_i in range(self.popsize):
             for transformation_i in range(n_transformations):
                 gens_to_mutated = rng.rand(self.transformation_len) <= prob_mut
 
@@ -133,7 +163,9 @@ class TFPopulationInitializer:
                 tf_start = transformation_i * 6
                 tf_end = tf_start + 6
 
-                tf_mutated = tf_identity + rng.normal(0, sigma, self.transformation_len)
+                tf_mutated = tf_identity + rng.normal(
+                    0, self.sigma, self.transformation_len
+                )
 
                 output[individual_i][tf_start:tf_end] = np.where(
                     gens_to_mutated, tf_mutated, tf_identity

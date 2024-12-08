@@ -21,6 +21,8 @@ from octa_mosaic.modules.experiments.mosaicking_creation import (
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
 from octa_mosaic.mosaic.transforms.affine_transform_bounds import AffineTransformBounds
 from octa_mosaic.mosaic.transforms.tf_population_initializers import (
+    InitializerType,
+    PopulationInitializerConfig,
     TFPopulationInitializer,
 )
 from octa_mosaic.optimization.algorithms.differential_evolution import (
@@ -47,6 +49,7 @@ def run_test(
     cases_list: List[DatasetCase],
     objective_function: Dict[str, Any],
     transformation_config: AffineTransformBounds,
+    initial_population_type: InitializerType,
     initial_population_config: InitialPopulationConfig,
     de_params: DifferentialEvolutionParams,
     image_preprocess_config: Dict,
@@ -57,7 +60,7 @@ def run_test(
     np.random.seed(de_params.seed)
     tm_procedure = TemplateMatchingEvaluatingEdges("template_matching_register")
     de_procedure = DEProcess("differential_evolution")
-    local_search = TFPopulationInitializer(seed=de_params.seed)
+    local_search = TFPopulationInitializer(**initial_population_config.__dict__)
     for case in cases_list:
         # 0) Get images from case and preprocess
         images_list = case.get_images()
@@ -106,16 +109,9 @@ def run_test(
         # 2.2) Initial population
         x0 = np.ones(tm_mosaic.n_images() * 6) * 0.5
 
-        if initial_population_config.function == "tf_level_single_gen":
-            initial_population = local_search.mutate_single_tf_gen(
-                tm_mosaic.n_images(), **initial_population_config.fun_params()
-            )
-        elif initial_population_config.function == "tf_level":
-            initial_population = local_search.mutate_all_tfs(
-                tm_mosaic.n_images(), **initial_population_config.fun_params()
-            )
-        else:
-            raise ValueError("Uknown population initializer function.")
+        initial_population = local_search.apply(
+            initial_population_type, tm_mosaic.n_images()
+        )
 
         initial_population = np.vstack((x0, initial_population))  # Add TM vector
         initial_population_filtered = evaluate_and_select_best_individuals(
@@ -163,14 +159,18 @@ def main():
     }
 
     TRANSFORMATION_CONFIG = AffineTransformBounds(
-        translation=20, scale=0.1, rotation=10, shear=5
+        translation=20,
+        scale=0.1,
+        rotation=10,
+        shear=5,
     )
 
-    INITIAL_POPULATION_CONFIG = InitialPopulationConfig(
-        function="tf_level_single_gen",  # tf_level_single_gen, tf_level
-        x=1.5,
+    INITIAL_POPULTION_TYPE = InitializerType.MUTATE_SINGLE_TF_GEN
+    INITIAL_POPULATION_CONFIG = PopulationInitializerConfig(
+        mutation_factor=1.5,
         popsize=1000,
         sigma=0.125,
+        seed=16,
     )
 
     DE_HPARAMS = DifferentialEvolutionParams(
@@ -202,6 +202,7 @@ def main():
         dataset.get_cases()[:10],
         OBJECTIVE_FUNCTION,
         TRANSFORMATION_CONFIG,
+        INITIAL_POPULTION_TYPE,
         INITIAL_POPULATION_CONFIG,
         DE_HPARAMS,
         PREPROCESS_CONFIG,
