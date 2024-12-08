@@ -2,7 +2,7 @@ import glob
 import os
 from typing import List
 
-from octa_mosaic.data.dataset_case import DatasetCase
+from octa_mosaic.experiments.data.dataset_case import DatasetCase
 
 
 class Dataset:

@@ -9,7 +9,8 @@ import numpy as np
 import yaml
 
 # user packages
-from octa_mosaic.data import Dataset, DatasetCase
+from octa_mosaic.experiments.data import Dataset, DatasetCase
+from octa_mosaic.experiments.utils.constants import DATASET_PATH, EXPERIMENTS_PATH
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments import population_initializers
 from octa_mosaic.modules.experiments.encoders import NumpyEncoder
@@ -22,7 +23,6 @@ from octa_mosaic.modules.optimization.differential_evolution import (
 )
 from octa_mosaic.modules.optimization.evaluate import select_best_individuals
 from octa_mosaic.modules.optimization.problem import TransformConfig
-from octa_mosaic.utils.constants import DATASET_PATH, EXPERIMENTS_PATH
 
 
 # TODO: Move to a module
