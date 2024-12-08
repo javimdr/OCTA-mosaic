@@ -9,6 +9,7 @@ import seaborn as sns
 from skimage.transform import AffineTransform
 
 from octa_mosaic.image_utils import image_similarity
+from octa_mosaic.image_utils.image_operations import dilate_mask
 from octa_mosaic.modules.evolutionary import init_population_lhs
 from octa_mosaic.mosaic.mosaic import Mosaic
 
@@ -180,20 +181,6 @@ def get_images_and_masks_list(mosaic: Mosaic):
         images_list[idx] = image_tf
 
     return images_list, masks_list
-
-
-def erode_mask(mask, pixels=10):
-    k_size = pixels * 2 + 1
-    kernel = np.ones((k_size, k_size))
-
-    return cv2.erode(mask.astype("float32"), kernel, iterations=1).astype(bool)
-
-
-def dilate_mask(mask, pixels=10):
-    k_size = pixels * 2 + 1
-    kernel = np.ones((k_size, k_size))
-
-    return cv2.dilate(mask.astype("float32"), kernel, iterations=1).astype(bool)
 
 
 def calc_border_of_overlap(fg, bg, border_px=10):
