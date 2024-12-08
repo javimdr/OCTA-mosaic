@@ -20,13 +20,13 @@ from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
+from octa_mosaic.mosaic.transforms.transform_config import AffineTransformBounds
 from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
 )
 from octa_mosaic.optimization.population_utils import (
     evaluate_and_select_best_individuals,
 )
-from octa_mosaic.optimization.problem import TransformConfig
 
 
 # TODO: Move to a module
@@ -44,7 +44,7 @@ class InitialPopulationConfig:
 def run_test(
     cases_list: List[DatasetCase],
     objective_function: Dict[str, Any],
-    transformation_config: TransformConfig,
+    transformation_config: AffineTransformBounds,
     initial_population_config: InitialPopulationConfig,
     de_params: DifferentialEvolutionParams,
     image_preprocess_config: Dict,
@@ -99,13 +99,7 @@ def run_test(
         )
 
         # 2.1) Bounds
-        transformation_bounds = optimization_utils.affine_bounds(
-            (0, 0),
-            trans_bound=transformation_config.translation,
-            scale_bound=transformation_config.scale,
-            rot_bound=transformation_config.rotation,
-            shear_bound=transformation_config.shear,
-        )
+        transformation_bounds = transformation_config.compute_bounds()
 
         bounds = np.tile(transformation_bounds, (tm_mosaic.n_images(), 1))
 
@@ -168,7 +162,7 @@ def main():
         },
     }
 
-    TRANSFORMATION_CONFIG = TransformConfig(
+    TRANSFORMATION_CONFIG = AffineTransformBounds(
         translation=20, scale=0.1, rotation=10, shear=5
     )
 
