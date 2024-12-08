@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 
-from octa_mosaic.modules.template_matching import template_matching
+from octa_mosaic.image_utils.template_matching import template_matching
 from octa_mosaic.mosaic.mosaic import Mosaic
 
 
