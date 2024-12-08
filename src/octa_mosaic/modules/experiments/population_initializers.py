@@ -5,6 +5,23 @@ import numpy as np
 
 class PopulationBasedOnLocalSearch:
     def __init__(self, seed: Optional[int] = None, transformation_len: int = 6):
+        """
+        Local search population initializers.
+
+        This class generates populations of individuals normalized in the range [0, 1].
+        Each individual is initialized as a vector of `0.5`, which corresponds to
+        keeping the original transformation values (no modification). This class apply
+        different local search methods around this initial vector, applying mutations
+        to generate diverse populations.
+
+        Mutation is performed by adding values sampled from a Gaussian distribution with
+        mean `0` and standard deviation `sigma`.
+
+        Args:
+            seed (int, optional): Random seed for reproducibility. Defaults to None.
+            transformation_len (int): The length of each transformation in the
+                individual. Defaults to 6.
+        """
         self.seed = seed
         self.transformation_len = transformation_len
 
@@ -12,26 +29,26 @@ class PopulationBasedOnLocalSearch:
         self, n_transformations: int, popsize: int, x: float, sigma: float = 0.125
     ) -> np.ndarray:
         """
-        Genera la población modificando un único gen de algunas transformaciones del individuo.
+        Generates the population by modifying a single gene of certain transformations
+        within each individual.
 
-        Aplica P_mut para determinar qué transformaciones van a ser mutadas (AL MENOS una debe serlo).
-        Las transformaciones mutadas SOLO alteran un gen de las mismas.
+        Applies a mutation probability `P_mut` to determine which transformations will
+        be mutated. At least one transformation must be mutated. Mutated transformations
+        alter ONLY one gene.
 
-        La mutación se realiza sumando un valor extraído de una gaussiana de media cero y desviación
-        estándar `sigma`.
-
-        La probabilidad de mutación es definida como: P_mut = x / #numero_transformaciones
+        Mutation probability is defined as:
+            P_mut = x / n_transformations
 
         Args:
-            n_transformations (int): numero de transformaciones de las que consta cada individuo.
-            popsize (int): number of individuals to create.
-            x (float): mutation probability expressed like p_mut = x / #n_transformations
-            sigma (float, optional): sigma of normal distribution with 0 mean. Defaults to 0.125.
+            n_transformations (int): Number of transformations per individual.
+            popsize (int): Number of individuals to create.
+            x (float): Mutation probability, expressed as P_mut = x / n_transformations.
+            sigma (float, optional): Standard deviation of the normal distribution.
+                Defaults to 0.125.
 
         Returns:
-            np.ndarray: population of size `popsize`x`n_transformations*TRANSFORMATION_LEN`
+            np.ndarray: Population of shape (popsize, n_transformations * transformation_len).
         """
-
         rng = np.random.RandomState(self.seed)
 
         n_gens = n_transformations * self.transformation_len
@@ -72,24 +89,28 @@ class PopulationBasedOnLocalSearch:
         sigma: float = 0.125,
     ) -> np.ndarray:
         """
-        Genera la población modificando de forma homogénea TODAS las transformaciones del individuo.
-        Aplica P_mut para determinar qué genes de cada transformacion son mutados (AL MENOS uno debe serlo).
+        Generates the population by homogeneously modifying all transformations
+        within each individual.
 
-        La mutación se realiza sumando un valor extraído de una gaussiana de media cero y desviación
-        estándar `sigma`.
+        Applies a mutation probability (P_mut) to determine which genes of each
+        transformation are mutated. At least one gene in each transformation must be
+        mutated.
 
-        La probabilidad de mutación es definida como:
-        P_mut = x / #TRANSFORMATION_LEN, donde #TRANSFORMATION_LEN = 6
+        Mutation is performed by adding a value sampled from a Gaussian distribution
+        with zero mean and standard deviation `sigma`.
+
+        Mutation probability is defined as:
+            P_mut = x / transformation_len, where transformation_len = 6
 
         Args:
-            n_transformations (int): numero de transformaciones de las que consta cada individuo.
-            popsize (int): number of individuals to create.
-            x (float): mutation probability expressed like p_mut = x / #n_transformations
-            sigma (float, optional): sigma of normal distribution with 0 mean. Defaults to 0.125.
-            seed (Optional[int], optional): Defaults to None.
+            n_transformations (int): Number of transformations per individual.
+            popsize (int): Number of individuals to create.
+            x (float): Mutation probability, expressed as P_mut = x / transformation_len.
+            sigma (float, optional): Standard deviation of the normal distribution.
+                Defaults to 0.125.
 
         Returns:
-            np.ndarray: population of size `popsize`x`n_transformations*TRANSFORMATION_LEN`
+            np.ndarray: Population of shape (popsize, n_transformations * transformation_len).
         """
         rng = np.random.RandomState(self.seed)
 
