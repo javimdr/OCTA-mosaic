@@ -4,15 +4,7 @@ import cv2
 import numpy as np
 from scipy.signal import fftconvolve
 
-
-def RMSE(x, y):
-    return np.sqrt(np.mean(np.subtract(x, y) ** 2))
-
-
-def MED(points_a, points_b):
-    """ Mean of Euclidean distances """
-    distances = [euclidean_dist(a, b) for a, b in zip(points_a, points_b)]
-    return np.mean(distances)
+from octa_mosaic.image_utils.image_metrics import ncc
 
 
 def euclidean_dist(p: Sequence, q: Sequence) -> float:
@@ -33,21 +25,9 @@ def euclidean_dist(p: Sequence, q: Sequence) -> float:
     return np.linalg.norm(np.subtract(p, q))
 
 
-def ccorr_normed(x, y):
-    xf = x.astype(float)
-    yf = y.astype(float)
-
-    num = (xf * yf).sum()
-    den = np.sqrt((xf ** 2).sum() * (yf ** 2).sum())
-    if den == 0:
-        return 0
-
-    return num / den
-
-
 def zncc(x, y, precission=None):
     """
-    Zero-normalized cross-correlation (ZNCC)
+    Zero-Normalized Cross Correlation (ZNCC)
     https://es.mathworks.com/help/images/ref/normxcorr2.html
     """
     assert x.shape == y.shape
@@ -61,7 +41,7 @@ def zncc(x, y, precission=None):
     # y_std = np.std(yf)
 
     num = np.sum(x_subs_mean * y_subs_mean)
-    den = (np.sum(x_subs_mean ** 2) * np.sum(y_subs_mean ** 2)) ** 0.5
+    den = (np.sum(x_subs_mean**2) * np.sum(y_subs_mean**2)) ** 0.5
 
     return num / den if den != 0 else 0
 
@@ -138,7 +118,7 @@ def impair_ccorr(src_image, dst_image, transform, ccorr_function="ZNCC"):
     indexes = mask_transform > 0
 
     if ccorr_function == "CV":
-        ccorr = ccorr_normed(src_transform[indexes], dst_image[indexes])
+        ccorr = ncc(src_transform[indexes], dst_image[indexes])
     elif ccorr_function == "ZNCC":
         ccorr = zncc(src_transform[indexes], dst_image[indexes])
     else:
@@ -151,7 +131,7 @@ def dice(im1, im2, empty_score=1.0):
     """
     Computes the Dice coefficient, a measure of set similarity.
     https://gist.github.com/brunodoamaral/e130b4e97aa4ebc468225b7ce39b3137
-    
+
     Parameters
     ----------
     im1 : array-like, bool
@@ -165,7 +145,7 @@ def dice(im1, im2, empty_score=1.0):
         Maximum similarity = 1
         No similarity = 0
         Both are empty (sum eq to zero) = empty_score
-        
+
     Notes
     -----
     The order of inputs for `dice` is irrelevant. The result will be
@@ -236,7 +216,7 @@ def dice(im1, im2, empty_score=1.0):
 def pixel_accuracy(im1, im2):
     """
     Computes the Pixel Accuracy: TP / (FN + FP).
-    
+
     Parameters
     ----------
     im1 : array-like, bool
@@ -249,7 +229,7 @@ def pixel_accuracy(im1, im2):
         Pixel accuracy as a float on range [0,1].
         Maximum similarity = 1
         No similarity = 0
-        
+
     Notes
     -----
     The order of inputs for `pixel_accuracy` is irrelevant. The result will be
