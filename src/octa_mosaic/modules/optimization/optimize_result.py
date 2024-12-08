@@ -1,8 +1,12 @@
+from dataclasses import dataclass
+from typing import Optional
+
 import numpy as np
 
 
-class OptimizeResult(dict):
-    """Represents the optimization result.
+@dataclass
+class OptimizeResult:
+    """Result of an optimization algorithm.
     Attributes
     ----------
     x : ndarray
@@ -13,32 +17,15 @@ class OptimizeResult(dict):
         Description of the cause of the termination.
     nit : int
         Number of iterations performed by the optimizer.
+
+    Args:
+        x (ndarray): The vector solution of the optimizer.
+        fitness (float): The fitness value of the vector solution.
+        message (str, optional): Message with the cause of the optimizer termination.
+        nit (int): Number of iterations performed by the optimizer.
     """
 
-    def __init__(self, x: np.ndarray, fitness: float, message: str, nits: int):
-        super().__init__()
-        self.x = x
-        self.fitness = fitness
-        self.message = message
-        self.nits = nits
-
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(name) from e
-
-    __setattr__ = dict.__setitem__  # type: ignore
-    __delattr__ = dict.__delitem__  # type: ignore
-
-    def __repr__(self):
-        if self.keys():
-            m = max(map(len, list(self.keys()))) + 1
-            return "\n".join(
-                [k.rjust(m) + ": " + repr(v) for k, v in sorted(self.items())]
-            )
-        else:
-            return self.__class__.__name__ + "()"
-
-    def __dir__(self):
-        return list(self.keys())
+    x: np.ndarray
+    fitness: float
+    message: Optional[str] = None
+    nits: Optional[int] = None
