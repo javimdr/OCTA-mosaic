@@ -3,7 +3,7 @@ import datetime
 import json
 import pickle as pkl
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 import yaml
@@ -20,11 +20,11 @@ from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
-from octa_mosaic.modules.optimization.differential_evolution import (
+from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
 )
-from octa_mosaic.modules.optimization.evaluate import select_best_individuals
-from octa_mosaic.modules.optimization.problem import TransformConfig
+from octa_mosaic.optimization.evaluate import select_best_individuals
+from octa_mosaic.optimization.problem import TransformConfig
 
 
 # TODO: Move to a module

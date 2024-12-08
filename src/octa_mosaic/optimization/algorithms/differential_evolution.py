@@ -7,9 +7,9 @@ from warnings import warn
 import numpy as np
 from tqdm import tqdm
 
-from octa_mosaic.modules.optimization import evaluate
-from octa_mosaic.modules.optimization.iteration_state import IterationState
-from octa_mosaic.modules.optimization.optimize_result import OptimizeResult
+from octa_mosaic.optimization import evaluate
+from octa_mosaic.optimization.iteration_state import IterationState
+from octa_mosaic.optimization.optimize_result import OptimizeResult
 
 CallbackFunction = Callable[[IterationState], bool]
 

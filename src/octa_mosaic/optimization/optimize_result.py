@@ -7,16 +7,6 @@ import numpy as np
 @dataclass
 class OptimizeResult:
     """Result of an optimization algorithm.
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimization.
-    fitness : float
-        Value of objective function
-    message : str
-        Description of the cause of the termination.
-    nit : int
-        Number of iterations performed by the optimizer.
 
     Args:
         x (ndarray): The vector solution of the optimizer.
