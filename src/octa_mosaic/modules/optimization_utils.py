@@ -10,8 +10,31 @@ from skimage.transform import AffineTransform
 
 from octa_mosaic.image_utils import image_similarity
 from octa_mosaic.image_utils.image_operations import dilate_mask
-from octa_mosaic.modules.evolutionary import init_population_lhs
 from octa_mosaic.mosaic.mosaic import Mosaic
+
+
+def init_population_lhs(pop_size, idv_dimm, seed):
+    """
+    Initializes the population with Latin Hypercube Sampling.
+    Latin Hypercube Sampling ensures that each parameter is uniformly
+    sampled over its range.
+    """
+    rng = np.random.RandomState(seed)
+
+    segsize = 1.0 / pop_size
+    samples = (
+        segsize * rng.uniform(size=(pop_size, idv_dimm))
+        + np.linspace(0.0, 1.0, pop_size, endpoint=False)[:, np.newaxis]
+    )
+
+    # Create an array for population of candidate solutions.
+    population = np.zeros_like(samples)
+
+    for j in range(idv_dimm):
+        order = rng.permutation(range(pop_size))
+        population[:, j] = samples[order, j]
+
+    return population
 
 
 class ExperimentResult:
