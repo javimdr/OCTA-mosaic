@@ -1,3 +1,3 @@
-from octa_mosaic.modules.mosaic import Mosaic
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 __all__ = [Mosaic]

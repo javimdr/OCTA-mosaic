@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.mosaic import Mosaic
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 
 @dataclass(frozen=True)

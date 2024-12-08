@@ -2,7 +2,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
-from octa_mosaic.modules.mosaic import Mosaic
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 Report = Dict[str, Any]
 ProcedureReport = Dict[str, Report]

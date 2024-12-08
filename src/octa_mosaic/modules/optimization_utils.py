@@ -9,8 +9,8 @@ import seaborn as sns
 from skimage.transform import AffineTransform
 
 from octa_mosaic.modules.evolutionary import init_population_lhs
-from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.utils import metrics
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 
 class ExperimentResult:

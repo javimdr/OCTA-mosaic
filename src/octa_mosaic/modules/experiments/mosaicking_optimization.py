@@ -5,12 +5,12 @@ import scipy.optimize
 
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
-from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.optimization.differential_evolution import (
     DifferentialEvolutionParams,
     differential_evolution_from_params,
 )
 from octa_mosaic.modules.optimization.optimize_result import OptimizeResult
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 
 class DEProcess(Procedure):

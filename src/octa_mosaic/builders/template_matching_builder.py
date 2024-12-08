@@ -3,10 +3,8 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 
-from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.mosaic import Mosaic
 from octa_mosaic.modules.template_matching import template_matching
-from octa_mosaic.modules.utils import metrics
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 
 class TemplateMatchingBuilder:
