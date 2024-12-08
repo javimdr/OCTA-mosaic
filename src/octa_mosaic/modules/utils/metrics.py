@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from scipy.signal import fftconvolve
 
-from octa_mosaic.image_utils.image_metrics import ncc
+from octa_mosaic.image_utils.image_metrics import ncc, zncc
 
 
 def euclidean_dist(p: Sequence, q: Sequence) -> float:
@@ -23,27 +23,6 @@ def euclidean_dist(p: Sequence, q: Sequence) -> float:
         Euclidean distance
     """
     return np.linalg.norm(np.subtract(p, q))
-
-
-def zncc(x, y, precission=None):
-    """
-    Zero-Normalized Cross Correlation (ZNCC)
-    https://es.mathworks.com/help/images/ref/normxcorr2.html
-    """
-    assert x.shape == y.shape
-
-    xf = x.astype(float)
-    yf = y.astype(float)
-
-    x_subs_mean = xf - np.mean(xf)
-    y_subs_mean = yf - np.mean(yf)
-    # x_std = np.std(xf)
-    # y_std = np.std(yf)
-
-    num = np.sum(x_subs_mean * y_subs_mean)
-    den = (np.sum(x_subs_mean**2) * np.sum(y_subs_mean**2)) ** 0.5
-
-    return num / den if den != 0 else 0
 
 
 def normxcorr2(image, template, mode="valid", precission=10):
