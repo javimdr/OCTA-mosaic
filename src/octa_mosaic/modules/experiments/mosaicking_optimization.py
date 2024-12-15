@@ -3,32 +3,32 @@ from typing import Any, Callable, Optional, Sequence, Tuple
 import numpy as np
 import scipy.optimize
 
-from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
-from octa_mosaic.modules.mosaico import Mosaico
-from octa_mosaic.modules.optimization.differential_evolution import (
+from octa_mosaic.mosaic.mosaic import Mosaic
+from octa_mosaic.mosaic.transforms import tf_utils
+from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
     differential_evolution_from_params,
 )
-from octa_mosaic.modules.optimization.optimize_result import OptimizeResult
+from octa_mosaic.optimization.optimize_result import OptimizeResult
 
 
 class DEProcess(Procedure):
     def _execution(
         self,
-        mosaic: Mosaico,
+        mosaic: Mosaic,
         fobj: Callable,
         fobj_args: Sequence[Any],
         bounds: np.ndarray,
         de_params: DifferentialEvolutionParams,
         initial_population: Optional[np.ndarray] = None,
-    ) -> Tuple[Mosaico, Report]:
+    ) -> Tuple[Mosaic, Report]:
 
         solution = differential_evolution_from_params(
             de_params, bounds, fobj, fobj_args, initial_population
         )
 
-        mosaic_solution = optimization_utils.individual_to_mosaico(solution.x, mosaic)
+        mosaic_solution = tf_utils.individual_to_mosaic(solution.x, mosaic)
         report = self.generate_report(solution)
         return mosaic_solution, report
 
@@ -61,7 +61,7 @@ class ScipyOptimizeProcedure(Procedure):
         fobj: Callable,
         fobj_args: Sequence[Any] = (),
         **optimize_kwargs,
-    ) -> Tuple[Mosaico, Report]:
+    ) -> Tuple[Mosaic, Report]:
 
         scipy_result = scipy.optimize.minimize(
             fun=minimization_fobj,
@@ -71,9 +71,7 @@ class ScipyOptimizeProcedure(Procedure):
             **optimize_kwargs,
         )
 
-        mosaic_solution = optimization_utils.individual_to_mosaico(
-            scipy_result.x, fobj_args[0]
-        )
+        mosaic_solution = tf_utils.individual_to_mosaic(scipy_result.x, fobj_args[0])
 
         optimize_result = OptimizeResult(
             x=scipy_result.x,

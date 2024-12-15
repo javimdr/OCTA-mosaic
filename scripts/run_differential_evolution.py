@@ -3,47 +3,33 @@ import datetime
 import json
 import pickle as pkl
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 import yaml
 
-# user packages
-from octa_mosaic.data import Dataset, DatasetCase
-from octa_mosaic.modules import optimization_utils
-from octa_mosaic.modules.experiments import initialize_population
-from octa_mosaic.modules.experiments.encoders import NumpyEncoder
+from octa_mosaic.experiments.constants import DATASET_PATH, EXPERIMENTS_PATH
+from octa_mosaic.experiments.data import Dataset, DatasetCase
+from octa_mosaic.experiments.encoders import NumpyEncoder
+from octa_mosaic.image_utils import image_operations
 from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
-from octa_mosaic.modules.optimization.differential_evolution import (
+from octa_mosaic.mosaic import mosaic_metrics
+from octa_mosaic.mosaic.transforms import tf_utils
+from octa_mosaic.mosaic.transforms.tf_limits_config import TFLimits
+from octa_mosaic.mosaic.transforms.tf_population_initializers import (
+    PopulationInitializerConfig,
+    PopulationInitializerType,
+    TFPopulationInitializer,
+)
+from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
 )
-from octa_mosaic.modules.optimization.problem import TransformConfig
-from octa_mosaic.utils.constants import DATASET_PATH, EXPERIMENTS_PATH
-
-
-# TODO: Move to a module
-class ImagePreprocess:
-    def __init__(self, seed: Optional[int] = None) -> None:
-        self._rng = np.random.RandomState(seed)
-
-    def crop(self, image: np.ndarray, px: int) -> np.ndarray:
-        return image[px:-px, px:-px]
-
-    def add_gaussian_noise(self, image: np.ndarray, sigma: float) -> np.ndarray:
-        noise = self._rng.normal(0, sigma, image.shape)
-        noisy_image = np.clip(image + noise, 0, 255).astype(np.uint8)
-        return noisy_image
-
-    def add_salt_pepper_noise(self, image: np.ndarray, prob: float) -> np.ndarray:
-        noisy_image = np.copy(image)
-        salt_mask = self._rng.rand(*image.shape) < (prob / 2)
-        pepper_mask = self._rng.rand(*image.shape) < (prob / 2)
-        noisy_image[salt_mask] = 255
-        noisy_image[pepper_mask] = 0
-        return noisy_image
+from octa_mosaic.optimization.population_utils import (
+    evaluate_and_select_best_individuals,
+)
 
 
 # TODO: Move to a module
@@ -60,8 +46,9 @@ class InitialPopulationConfig:
 
 def run_test(
     cases_list: List[DatasetCase],
-    objective_function_data: Dict[str, Any],
-    transformation_config: TransformConfig,
+    objective_function: Dict[str, Any],
+    transformation_config: TFLimits,
+    initial_population_type: PopulationInitializerType,
     initial_population_config: InitialPopulationConfig,
     de_params: DifferentialEvolutionParams,
     image_preprocess_config: Dict,
@@ -69,18 +56,16 @@ def run_test(
     solutions_dict = {}
     reports_dict = {}
 
-    image_preprocessing = ImagePreprocess(seed=de_params.seed)
+    np.random.seed(de_params.seed)
     tm_procedure = TemplateMatchingEvaluatingEdges("template_matching_register")
     de_procedure = DEProcess("differential_evolution")
-    local_search = initialize_population.PopulationBasedOnLocalSearch(
-        seed=de_params.seed
-    )
+    local_search = TFPopulationInitializer(**initial_population_config.__dict__)
     for case in cases_list:
         # 0) Get images from case and preprocess
         images_list = case.get_images()
         if image_preprocess_config["gaussian_sigma"] > 0:
             images_list = [
-                image_preprocessing.add_gaussian_noise(
+                image_operations.add_gaussian_noise(
                     img, image_preprocess_config["gaussian_sigma"]
                 )
                 for img in images_list
@@ -88,7 +73,7 @@ def run_test(
 
         if image_preprocess_config["salt_paper_prob"] > 0:
             images_list = [
-                image_preprocessing.add_salt_pepper_noise(
+                image_operations.add_salt_pepper_noise(
                     img, image_preprocess_config["salt_paper_prob"]
                 )
                 for img in images_list
@@ -96,50 +81,43 @@ def run_test(
 
         if image_preprocess_config["crop_px"] > 0:
             images_list = [
-                image_preprocessing.crop(img, image_preprocess_config["crop_px"])
+                image_operations.crop_image(img, image_preprocess_config["crop_px"])
                 for img in images_list
             ]
 
         # 1) TM: First aproximation
         tm_mosaic, tm_report = tm_procedure.run(
-            images_list, objective_function_data["args"]
+            images_list,
+            first_pair_func=objective_function["func"],
+            first_pair_kwargs=objective_function["kwargs"],
         )
 
         # 2) DE: Optimization
-        args = objective_function_data["args"]
-        fobj_args = (tm_mosaic, args["border_width_list"], args["border_weight_list"])
+        fobj_fn = tf_utils.as_objective_function
+        fobj_args = (
+            objective_function["func"],
+            tm_mosaic,
+            *list(objective_function["kwargs"].values()),
+        )
 
         # 2.1) Bounds
-        transformation_bounds = optimization_utils.affine_bounds(
-            (0, 0),
-            trans_bound=transformation_config.translation,
-            scale_bound=transformation_config.scale,
-            rot_bound=transformation_config.rotation,
-            shear_bound=transformation_config.shear,
-        )
+        transformation_bounds = transformation_config.compute_bounds()
 
         bounds = np.tile(transformation_bounds, (tm_mosaic.n_images(), 1))
 
         # 2.2) Initial population
         x0 = np.ones(tm_mosaic.n_images() * 6) * 0.5
 
-        if initial_population_config.function == "tf_level_single_gen":
-            initial_population = local_search.tf_level_single_gen(
-                tm_mosaic.n_images(), **initial_population_config.fun_params()
-            )
-        elif initial_population_config.function == "tf_level":
-            initial_population = local_search.tf_level(
-                tm_mosaic.n_images(), **initial_population_config.fun_params()
-            )
-        else:
-            raise ValueError("Uknown population initializer function.")
+        initial_population = local_search.apply(
+            initial_population_type, tm_mosaic.n_images()
+        )
 
         initial_population = np.vstack((x0, initial_population))  # Add TM vector
-        initial_population_filtered = initialize_population.select_best_individuals(
+        initial_population_filtered = evaluate_and_select_best_individuals(
             indvs_to_select=de_params.popsize,
             population=initial_population,
             bounds=bounds,
-            f_obj=objective_function_data["fobj"],
+            f_obj=fobj_fn,
             args=fobj_args,
             n_workers=de_params.cores,
         )
@@ -147,7 +125,7 @@ def run_test(
         # 2.3) DE Params
         de_mosaic, de_report = de_procedure.run(
             tm_mosaic,
-            objective_function_data["fobj"],
+            fobj_fn,
             fobj_args,
             bounds,
             de_params,
@@ -172,30 +150,34 @@ def main():
     }
 
     OBJECTIVE_FUNCTION = {
-        "fobj": optimization_utils.objective_function_multi_edge_optimized,
-        "args": {
-            "border_width_list": [5, 10, 15],
-            "border_weight_list": [0.33, 0.33, 0.33],
+        "func": mosaic_metrics.calc_zncc_on_multiple_seamlines,
+        "kwargs": {
+            "widths": [5, 10, 15],
+            "weights": [0.33, 0.33, 0.33],
         },
     }
 
-    TRANSFORMATION_CONFIG = TransformConfig(
-        translation=20, scale=0.1, rotation=10, shear=5
+    TRANSFORMATION_CONFIG = TFLimits(
+        translation=20,
+        scale=0.1,
+        rotation=10,
+        shear=5,
     )
 
-    INITIAL_POPULATION_CONFIG = InitialPopulationConfig(
-        function="tf_level_single_gen",  # tf_level_single_gen, tf_level
-        x=1.5,
+    INITIAL_POPULTION_TYPE = PopulationInitializerType.MUTATE_SINGLE_TF_GEN
+    INITIAL_POPULATION_CONFIG = PopulationInitializerConfig(
+        mutation_factor=1.5,
         popsize=1000,
         sigma=0.125,
+        seed=16,
     )
 
     DE_HPARAMS = DifferentialEvolutionParams(
-        F=0.2,
-        C=0.75,
-        generations=100,
+        F=0.5,
+        C=0.9,
+        generations=25,
         strategy="rand1bin",
-        popsize=200,
+        popsize=50,
         seed=16,
         fitness_population_std_tol=0.005,
         cores=8,
@@ -216,9 +198,10 @@ def main():
     current_experiment_path.mkdir(parents=True, exist_ok=True)
 
     test_sol, test_report = run_test(
-        dataset.get_cases()[:1],
+        dataset.get_cases()[:10],
         OBJECTIVE_FUNCTION,
         TRANSFORMATION_CONFIG,
+        INITIAL_POPULTION_TYPE,
         INITIAL_POPULATION_CONFIG,
         DE_HPARAMS,
         PREPROCESS_CONFIG,

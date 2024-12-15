@@ -1,32 +1,44 @@
 import gc
-from typing import Optional, Union
+from typing import Literal, Optional
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def impair(img_a, img_b, method="falsecolor", **kargs) -> np.ndarray:
-    """[summary]
+def impair(
+    img_a: np.ndarray,
+    img_b: np.ndarray,
+    method: Literal["falsecolor", "diff", "blend", "chest"] = "falsecolor",
+    **kargs
+) -> np.ndarray:
+    """
+    Compares two grayscale images using different visual methods.
 
-    Parameters
-    ----------
-    img_a : np.ndarray
-        Image A
-    img_b : np.ndarray
-        Image B
-    method : str, optional
-        Disponibles: 
-            - 'falsecolor': img_a (Magenta) and img_b (Green)
-            - 'diff':
-            - 'blend':
-            - 'chess': custom arg N, by default N=5
-        By default 'falsecolor'.
+    This function allows you to visually compare two grayscale images (`img_a` and `img_b`) using different methods such as false color, difference, blending, and chessboard pattern overlay.
 
-    Returns
-    -------
-    [type]
-        [description]
+    Args:
+        img_a (np.ndarray): The first grayscale image.
+        img_b (np.ndarray): The second grayscale image.
+        method (str, optional): The comparison method to use.
+            Options include:
+            - "falsecolor": Combines the two images by stacking them along the color
+                channels to create a false color image where image A has magent color and
+                image B has green color.
+            - "diff": Displays the absolute difference between the two images.
+            - "blend": Blends the two images together using specified
+                alpha, beta, and gamma weights.
+            - "chess": Overlays the two images in a chessboard-like pattern,
+                with alternating regions from each image.
+            Default is "falsecolor".
+        **kargs: Additional keyword arguments depending on the method:
+            - For `blend`: accepts `alpha`, `beta`, and `gamma` (weights for blending).
+                Default values are `alpha=0.5`, `beta=0.5`, and `gamma=0`.
+            - For `chess`: accepts `N` (number of chessboard tiles).
+                Default value is `N=5`.
+
+    Returns:
+        np.ndarray: The resulting image after applying the chosen comparison method.
     """
     A = np.asarray(img_a, np.uint8)
     B = np.asarray(img_b, np.uint8)

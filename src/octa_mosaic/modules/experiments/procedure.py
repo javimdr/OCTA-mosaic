@@ -2,7 +2,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
-from octa_mosaic.modules.mosaico import Mosaico
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 Report = Dict[str, Any]
 ProcedureReport = Dict[str, Report]
@@ -13,7 +13,7 @@ class Procedure(ABC):
         self.name_id = name_id
 
     @abstractmethod
-    def _execution(self, x: Any, *args, **kargs) -> Tuple[Mosaico, Report]:
+    def _execution(self, x: Any, *args, **kargs) -> Tuple[Mosaic, Report]:
         """Execute the procedure and return the result and a report."""
 
     def run(self, x: Any, *args, **kargs) -> Tuple[Any, ProcedureReport]:

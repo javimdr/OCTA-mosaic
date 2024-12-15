@@ -1,26 +1,25 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from octa_mosaic import Mosaic, TemplateMatchingBuilder
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
-from octa_mosaic.modules.mosaico import Mosaico
-from octa_mosaic.modules.mosaico_tm_register_MB import Mosaico_TM_register_MB
 
 
 class TemplateMatchingEvaluatingEdges(Procedure):
     def _execution(
         self,
         images_list: List[np.ndarray],
-        fobj_kwargs: Dict[str, Any],
-    ) -> Tuple[Mosaico, Report]:
+        first_pair_func: Callable = None,
+        first_pair_kwargs: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[Mosaic, Report]:
 
-        # function = config["function"]
-        border_width_list = fobj_kwargs["border_width_list"]
-        border_weight_list = fobj_kwargs["border_weight_list"]
-
-        register = Mosaico_TM_register_MB(border_width_list, border_weight_list)
-        images_order, images_locations = register.edge_order(images_list)
-        mosaic_tm = register.mosaico_from_indices(
+        register = TemplateMatchingBuilder(
+            first_pair_func=first_pair_func,
+            first_pair_kwargs=first_pair_kwargs,
+        )
+        images_order, images_locations = register.generate_mosaic_order(images_list)
+        mosaic_tm = register.mosaic_from_order(
             images_order, images_locations, images_list
         )
         report = self._generate_report(images_order, images_locations)
@@ -40,13 +39,13 @@ class TemplateMatchingEvaluatingEdges(Procedure):
         return {"images_order": data}
 
     @staticmethod
-    def mosaic_from_report(images_list: List[np.ndarray], report: Report) -> Mosaico:
-        mosaico = Mosaico()
+    def mosaic_from_report(images_list: List[np.ndarray], report: Report) -> Mosaic:
+        mosaic = Mosaic()
 
         for image_data in report["images_order"]:
             image = images_list[image_data["index"]]
             location = image_data["location"]
 
-            mosaico.add(image, location, "ij")
+            mosaic.add(image, location, "ij")
 
-        return mosaico
+        return mosaic

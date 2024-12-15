@@ -1,14 +1,98 @@
 import multiprocessing as mp
 import time
-from concurrent import futures
-from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Callable, Optional, Sequence, Tuple
+from dataclasses import dataclass
+from typing import Any, Callable, Iterable, Literal, Optional, Sequence, Tuple
+from warnings import warn
 
 import numpy as np
 from tqdm import tqdm
 
-from octa_mosaic.modules.optimize_solution import OptimizeSolution
-from octa_mosaic.modules.utils import metrics
+from octa_mosaic.optimization import population_utils
+from octa_mosaic.optimization.iteration_state import IterationState
+from octa_mosaic.optimization.optimize_result import OptimizeResult
+
+CallbackFunction = Callable[[IterationState], bool]
+
+
+@dataclass
+class DifferentialEvolutionParams:
+    """
+    Configuration parameters for the Differential Evolution algorithm.
+
+    Attributes:
+        F (float): Mutation probability. Default is 0.8.
+        C (float): Crossover probability. Default is 0.7.
+        generations (int): The number of generations. Default is 1000.
+        strategy (str): The strategy to use for mutation and crossover
+            Default is "best1bin".
+        popsize (Optional[int]): Population size. Default is 20.
+        idv_elements (int): The number of groups in each individual.
+            For example, if an individual contains three 2D points (x, y), the
+            individual has a length of 6 (x1, y1, x2, y2, x3, y3) but can be grouped
+            into 3 elements (the three points). This value is used in the crossover step.
+            The default value is 1, which means that the input individual is a
+            single group.
+        use_bounce_back (bool): Flag to enable bounce-back strategy. Default is True.
+        population_similarity (float, optional): Stop when the Euclidean distance of all
+            individuals from the best individual is less than this value. Default is None.
+        gens_without_improve (int, optional): Stop if there has been no improvement in
+            the best fitness value in this many generations. Default is None.
+        fitness_population_std_tol (float, optional): Stop if the standard deviation of
+            the population fitness values is less than this threshold. Default is None.
+        seed (int, optional): Random seed for reproducibility. Default is None.
+        callback (CallbackFunction, optional): A callback function to be invoked at each
+            generation. Default is None.
+        cores (int): Number of CPU cores to use. Default is -1, which means using all
+            available cores.
+        display_progress_bar (bool): Flag to display the progress bar during the
+            evolution. Default is False.
+    """
+
+    F: float = 0.8
+    C: float = 0.7
+    generations: int = 1000
+    strategy: Literal["best1bin", "rand1bin"] = "best1bin"
+    popsize: Optional[int] = 20
+    idv_elements: int = 1
+    use_bounce_back: bool = True
+    population_similarity: Optional[float] = None
+    gens_without_improve: Optional[int] = None
+    fitness_population_std_tol: Optional[float] = None
+    seed: Optional[int] = None
+    callback: Optional[CallbackFunction] = None
+    cores: int = -1
+    display_progress_bar: bool = False
+
+
+def differential_evolution_from_params(
+    params: DifferentialEvolutionParams,
+    bounds: np.ndarray,
+    fobj: Callable,
+    fobj_args: Sequence[Any] = (),
+    initial_population: Optional[np.ndarray] = None,
+) -> OptimizeResult:
+
+    solution = differential_evolution(
+        fobj=fobj,
+        args=fobj_args,
+        bounds=bounds,
+        initial_population=initial_population,
+        mutation=params.F,
+        recombination=params.C,
+        generations=params.generations,
+        strategy=params.strategy,
+        popsize=params.popsize,
+        n_elements_in_individual=params.idv_elements,
+        use_bounce_back=params.use_bounce_back,
+        max_dist=params.population_similarity,
+        no_acc=params.gens_without_improve,
+        pop_convergence_tol=params.fitness_population_std_tol,
+        seed=params.seed,
+        callback=params.callback,
+        cores=params.cores,
+        display_progress_bar=params.display_progress_bar,
+    )
+    return solution
 
 
 def differential_evolution(
@@ -19,7 +103,7 @@ def differential_evolution(
     recombination: float = 0.7,
     generations: int = 1000,
     strategy: str = "best1bin",
-    popsize: int = 20,
+    popsize: Optional[int] = 20,
     initial_population: Optional[np.ndarray] = None,
     n_elements_in_individual: int = 1,
     use_bounce_back: bool = True,
@@ -53,7 +137,7 @@ def differential_evolution(
         The mutation constant, by default 0.8
 
     recombination : float, optional
-        The recombination constant, by default 0.7
+        The crossover constant, by default 0.7
 
     generations : int, optional
         The maximum number of generations over which the entire population
@@ -120,7 +204,7 @@ def differential_evolution(
             of the 10th International Conference on Optimization of
             Electrical and Electronic Equipment (Vol. 3, pp. 149-156).
     """
-    solver = _DifferentialEvolution(
+    solver = DifferentialEvolution(
         fobj,
         bounds,
         args=args,
@@ -144,7 +228,7 @@ def differential_evolution(
 
 
 def normalize_population(population, bounds):
-    min_b, max_b = np.array(bounds).T
+    min_b, max_b = np.array(bounds, "float32").T
     pop_norm = (population - min_b) / (max_b - min_b)
     pop_norm = np.clip(pop_norm, 0, 1)
     return pop_norm
@@ -174,7 +258,7 @@ def init_population_lhs(pop_size, idv_dimm, seed):
     return population
 
 
-class _DifferentialEvolution:
+class DifferentialEvolution:
     _STRATEGIES = ["rand1bin", "best1bin"]
 
     def __init__(
@@ -186,7 +270,7 @@ class _DifferentialEvolution:
         C: float = 0.7,
         generations: int = 1000,
         strategy: str = "best1bin",
-        popsize: int = 20,
+        popsize: Optional[int] = 20,
         initial_population: Optional[np.ndarray] = None,
         idv_elements: int = 1,
         use_bounce_back: bool = True,
@@ -275,7 +359,7 @@ class _DifferentialEvolution:
 
         self.fobj = fobj
         self.fobj_args = args
-        self.bounds = bounds
+        self.bounds = np.array(bounds, "float32")
         self._dimm = len(bounds)
         if idv_elements == 1:
             idv_elements = self._dimm
@@ -300,9 +384,15 @@ class _DifferentialEvolution:
         if initial_population is not None:
             self.pop_size = len(initial_population)
             self.population = np.array(initial_population, "float32")
-            assert (
-                self.population.min() >= 0.0 and self.population.max() <= 1.0
-            ), "Las componentes de los individuos deben estar normalizadas en el intervalo [0, 1]"
+            if not (self.population.min() >= 0.0 and self.population.max() <= 1.0):
+                warn(
+                    "Las componentes de los individuos deben estar normalizadas en el intervalo [0, 1]. Normalizando..."
+                )
+                self.population = normalize_population(initial_population, bounds)
+        elif popsize is None:
+            raise ValueError(
+                "Select a `popsize` value if `initial_population` is not provided."
+            )
         else:
             self.pop_size = popsize
             self.population = init_population_lhs(
@@ -311,7 +401,7 @@ class _DifferentialEvolution:
 
         self.min_b, self.max_b = np.array(bounds).T
         self.diff = np.fabs(self.min_b - self.max_b)
-        self.pop_denorm = self.min_b + self.population * self.diff
+        self.pop_denorm = self._denorm(self.population)
 
         # **
         self.fitness_values = np.full(self.pop_size, -np.inf, "float32")
@@ -320,10 +410,8 @@ class _DifferentialEvolution:
         self.its_since_last_improvement = 0
         self.n_cores = mp.cpu_count()
 
-        self.solution = OptimizeSolution()
-
-    def _denorm(self, individual):
-        return self.min_b + individual * self.diff
+    def _denorm(self, x: np.ndarray) -> np.ndarray:
+        return self.min_b + x * self.diff
 
     def _apply_mutation(self, individual_idx: int) -> np.ndarray:
         candidates_idxs = [idx for idx in range(self.pop_size) if idx != individual_idx]
@@ -384,23 +472,11 @@ class _DifferentialEvolution:
     ) -> np.ndarray:
         """Calculate the fitness value of the each individual in a population."""
 
-        population_denorm = [self._denorm(idv) for idv in population]
-        fitness_list = np.full(len(population), -np.inf, "float32")
+        population_denorm = self._denorm(population)
 
-        with ProcessPoolExecutor(max_workers=n_workers) as executor:
-            future_to_fitness = {
-                executor.submit(self.fobj, individual, *self.fobj_args): idx
-                for idx, individual in enumerate(population_denorm)
-            }
-
-            for future in futures.as_completed(future_to_fitness):
-                idx = future_to_fitness[future]
-                if future.exception() is None:
-                    fitness_list[idx] = future.result()
-                else:
-                    print(
-                        f"Generate an exception on individual {idx}: {future.exception()}"
-                    )
+        fitness_list = population_utils.evaluate_population(
+            population_denorm, self.fobj, self.fobj_args, n_workers
+        )
 
         return fitness_list
 
@@ -433,7 +509,7 @@ class _DifferentialEvolution:
             best_individual = self.population[self.best_idx]
             if np.all(
                 [
-                    metrics.euclidean_dist(best_individual, individual) < self.max_dist
+                    euclidean_dist(best_individual, individual) < self.max_dist
                     for individual in self.population
                 ]
             ):
@@ -445,7 +521,10 @@ class _DifferentialEvolution:
         ):
             status_message = f"Ended because the best individual did not improve in {self.no_acc_iters} generations."
 
-        if np.std(self.fitness_values) <= self.pop_convergence_tol:
+        if (
+            self.pop_convergence_tol is not None
+            and np.std(self.fitness_values) <= self.pop_convergence_tol
+        ):
             status_message = f"Ended because the std of fitness population values is lower than {self.pop_convergence_tol} (value: {np.std(self.fitness_values) : 0.4f})."
 
         return (status_message is not None, status_message)
@@ -463,7 +542,7 @@ class _DifferentialEvolution:
         pass
 
     def solve(self, cores=-1, display_progress_bar=False):
-        start_time = time.time()
+        start_time = time.perf_counter()
         status_message = None
 
         n_cores = mp.cpu_count() if cores < 1 else min(cores, mp.cpu_count())
@@ -473,25 +552,32 @@ class _DifferentialEvolution:
             disable=not display_progress_bar,
         )
         self.start_optimization()
+        nit = 0
         for gen in progress_bar:
-            self.start_of_generation()
             progress_bar.set_description(
                 f"Current fitness value: {self.fitness_values[self.best_idx]:.4f}."
             )
+            nit += 1
             self.its_since_last_improvement += 1
 
+            self.start_of_generation()
+
             trial_population = np.array(
-                [self.create_new_individual(idx) for idx in range(self.pop_size)]
+                [self.create_new_individual(idx) for idx in range(self.pop_size)],
+                # "float32",
             )
             trial_fitness = self._evaluate_population(trial_population, n_cores)
             self._update(trial_population, trial_fitness)
 
-            self.solution.add_iteration_result(
-                self._denorm(self.population[self.best_idx]), self.fitness_values
+            generation_state = IterationState(
+                nit,
+                self._denorm(self.population),
+                self.fitness_values,
+                int(self.best_idx),
             )
 
             if self.callback is not None:
-                if self.callback(self.solution):
+                if self.callback(generation_state):
                     status_message = f"Ended by callback function request."
                     break
 
@@ -501,13 +587,33 @@ class _DifferentialEvolution:
                 break
             self.end_of_generation()
         self.end_optimization()
-        end_time = time.time()
+        end_time = time.perf_counter()
 
         if status_message is None:
             status_message = "Ended because the total number of generations was made."
 
-        self.solution.set_message(status_message)
-        self.solution.add("execution_time", end_time - start_time)
-        self.solution.add("last_population", self._denorm(self.population))
+        result = OptimizeResult(
+            x=self._denorm(self.population[self.best_idx]),
+            fitness=self.fitness_values[self.best_idx],
+            execution_time=end_time - start_time,
+            nits=nit,
+            message=status_message,
+        )
 
-        return self.solution
+        result.last_population = self._denorm(self.population)
+
+        return result
+
+
+def euclidean_dist(p: Iterable[float], q: Iterable[float]) -> float:
+    """Compute euclidean distance between P and Q.
+
+    Args:
+        p (Iterable[float]): 1D array
+        q (Iterable[float]): 1D array
+
+    Returns:
+        float: euclidean distance between P and Q
+
+    """
+    return np.linalg.norm(np.subtract(p, q))
