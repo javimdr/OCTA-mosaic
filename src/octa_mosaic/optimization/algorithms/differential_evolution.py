@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Optional, Sequence, Tuple
+from typing import Any, Callable, Iterable, Literal, Optional, Sequence, Tuple
 from warnings import warn
 
 import numpy as np
@@ -17,30 +17,47 @@ CallbackFunction = Callable[[IterationState], bool]
 @dataclass
 class DifferentialEvolutionParams:
     """
-    F: Mutation probability
-    C: Crossover probability value
-    popsize: Population size. Not necessary if initial population is used.
+    Configuration parameters for the Differential Evolution algorithm.
+
+    Attributes:
+        F (float): Mutation probability. Default is 0.8.
+        C (float): Crossover probability. Default is 0.7.
+        generations (int): The number of generations. Default is 1000.
+        strategy (str): The strategy to use for mutation and crossover
+            Default is "best1bin".
+        popsize (Optional[int]): Population size. Default is 20.
+        idv_elements (int): The number of groups in each individual.
+            For example, if an individual contains three 2D points (x, y), the
+            individual has a length of 6 (x1, y1, x2, y2, x3, y3) but can be grouped
+            into 3 elements (the three points). This value is used in the crossover step.
+            The default value is 1, which means that the input individual is a
+            single group.
+        use_bounce_back (bool): Flag to enable bounce-back strategy. Default is True.
+        population_similarity (float, optional): Stop when the Euclidean distance of all
+            individuals from the best individual is less than this value. Default is None.
+        gens_without_improve (int, optional): Stop if there has been no improvement in
+            the best fitness value in this many generations. Default is None.
+        fitness_population_std_tol (float, optional): Stop if the standard deviation of
+            the population fitness values is less than this threshold. Default is None.
+        seed (int, optional): Random seed for reproducibility. Default is None.
+        callback (CallbackFunction, optional): A callback function to be invoked at each
+            generation. Default is None.
+        cores (int): Number of CPU cores to use. Default is -1, which means using all
+            available cores.
+        display_progress_bar (bool): Flag to display the progress bar during the
+            evolution. Default is False.
     """
 
     F: float = 0.8
     C: float = 0.7
     generations: int = 1000
-    strategy: str = "best1bin"
-    popsize: Optional[int] = None
+    strategy: Literal["best1bin", "rand1bin"] = "best1bin"
+    popsize: Optional[int] = 20
     idv_elements: int = 1
     use_bounce_back: bool = True
-
-    # Stop when the Euclidean distance of all individuals from the best
-    # individual is less than `population_similarity`
     population_similarity: Optional[float] = None
-
-    # Stop when not occurred an improvement of the best fitness value
-    # in a `gens_without_improve` generations.
     gens_without_improve: Optional[int] = None
-
-    # Stop when the std of all fitness values is less than `fitness_population_std_tol`.
     fitness_population_std_tol: Optional[float] = None
-
     seed: Optional[int] = None
     callback: Optional[CallbackFunction] = None
     cores: int = -1
