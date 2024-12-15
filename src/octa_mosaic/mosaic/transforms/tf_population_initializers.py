@@ -31,6 +31,15 @@ class PopulationInitializerConfig:
     sigma: float = 0.125
     seed: Optional[int] = None
 
+    def build_initializer(self) -> "TFPopulationInitializer":
+        return TFPopulationInitializer(
+            popsize=self.popsize,
+            transformation_len=self.transformation_len,
+            mutation_factor=self.mutation_factor,
+            sigma=self.sigma,
+            seed=self.seed,
+        )
+
 
 @dataclass
 class TFPopulationInitializer:
