@@ -1,176 +1,12 @@
-import copy
-from datetime import date
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-from skimage.transform import AffineTransform
 
 from octa_mosaic.image_utils import image_similarity
 from octa_mosaic.image_utils.image_operations import dilate_mask
 from octa_mosaic.mosaic.mosaic import Mosaic
-
-
-def init_population_lhs(pop_size, idv_dimm, seed):
-    """
-    Initializes the population with Latin Hypercube Sampling.
-    Latin Hypercube Sampling ensures that each parameter is uniformly
-    sampled over its range.
-    """
-    rng = np.random.RandomState(seed)
-
-    segsize = 1.0 / pop_size
-    samples = (
-        segsize * rng.uniform(size=(pop_size, idv_dimm))
-        + np.linspace(0.0, 1.0, pop_size, endpoint=False)[:, np.newaxis]
-    )
-
-    # Create an array for population of candidate solutions.
-    population = np.zeros_like(samples)
-
-    for j in range(idv_dimm):
-        order = rng.permutation(range(pop_size))
-        population[:, j] = samples[order, j]
-
-    return population
-
-
-class ExperimentResult:
-    def __init__(self, title_test, config_dict, results_dict, info={}):
-        self.title = title_test
-        self.configuration = copy.deepcopy(config_dict)
-        self.date = date.today().strftime("%d/%m/%Y")
-        self.results_dict = copy.deepcopy(results_dict)
-        self.info = info
-
-    def __repr__(self):
-        return f"ExperimentResult({self.title})"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-def plot_sol(sol, ax=None, y_min=0, y_max=1):
-    with sns.axes_style("whitegrid"):
-
-        if ax is None:
-            f, ax = plt.subplots(1, 1, figsize=(12, 6))
-
-        x = np.arange(len(sol.fitness_record["pop_mean"]))
-        colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-
-        ax.plot(x, sol.fitness_record["best"], label="Best", color=colors[0], zorder=3)
-
-        mean = np.array(sol.fitness_record["pop_mean"])
-        std = np.array(sol.fitness_record["pop_std"])
-        ax.fill_between(x, mean - std, mean + std, alpha=0.3, color=colors[1], zorder=1)  # type: ignore
-        ax.plot(x, mean, label="Mean", color=colors[1], zorder=2)
-        ax.legend()
-
-        ax.set_ylim(ymin=y_min, ymax=y_max)
-        ax.set_xlabel("Generations")
-        ax.set_ylabel("Fitness")
-        ax.set_title(
-            f'Best: {sol.fitness_record["best"][-1] : 0.4f}. Pop: {sol.fitness_record["pop_mean"][-1] : 0.4f} ± {sol.fitness_record["pop_std"][-1] : 0.4f}'
-        )
-        return ax
-
-
-# ======== Funciones ayuda de las funciones objetivo ========
-
-
-def affine_bounds(
-    base_loc: Sequence,  # base_scale: Sequence=(1,1),
-    trans_bound: float = 30,
-    scale_bound: float = 0.05,
-    rot_bound: float = 15.0,
-    shear_bound: float = 5.0,
-):
-    """Bounds of the individuals
-
-    Parameters
-    ----------
-    base_loc : Sequence
-        The translation bounds are applied around this location.
-    trans_bound : int, optional
-        Translation bounds, by default $\\pm$30 pixels.
-    scale_bound : float, optional
-        Scale bounds, by default $\\pm$0.05 (5%).
-    rot_bound : float, optional
-        Rotation bounds, by default $\\pm$15 degrees.
-    shear_bound : float, optional
-        Shear bounds, by default $\\pm$5 degrees.
-
-    Returns
-    -------
-    Sequence 6x2
-        Upper and lower bounds for eache freedom degree:
-        (tx, ty, sx, sy, rot, shear)
-    """
-    x, y = base_loc
-    sx, sy = (1, 1)  # base_scale
-
-    translation_x_bounds = (x - trans_bound, x + trans_bound)
-    translation_y_bounds = (y - trans_bound, y + trans_bound)
-    scale_x_bounds = (sx - scale_bound, sx + scale_bound)
-    scale_y_bounds = (sy - scale_bound, sy + scale_bound)
-    rotation_bounds = (np.deg2rad(-rot_bound), np.deg2rad(rot_bound))
-    shear_bounds = (np.deg2rad(-shear_bound), np.deg2rad(shear_bound))
-
-    return np.array(
-        [
-            translation_x_bounds,
-            translation_y_bounds,
-            scale_x_bounds,
-            scale_y_bounds,
-            rotation_bounds,
-            shear_bounds,
-        ]
-    ).astype(float)
-
-
-def initialize_population(n_images, popsize, bounds, seed=None):
-    tm_individual_norm = [0.5 for _ in range(6 * n_images)]
-    pop_norm_lhc = init_population_lhs(popsize, 6 * n_images, seed)
-    pop_norm = np.append(pop_norm_lhc, tm_individual_norm)
-    pop_norm = pop_norm.reshape(popsize + 1, 6 * n_images)
-    return pop_norm
-
-
-def tf_repr_to_tf_matrix(tf_repr) -> AffineTransform:
-    assert len(tf_repr) == 6, f"{tf_repr}"
-    T = AffineTransform(
-        translation=tf_repr[:2],
-        scale=tf_repr[2:4],
-        rotation=tf_repr[4],
-        shear=tf_repr[5],
-    )
-    # print(np.round(T.params, 2))
-    return T
-
-
-def tf_matrix_to_repr(matrix: AffineTransform) -> np.ndarray:
-    tx, ty = matrix.translation
-    sx, sy = matrix.scale
-    rot = matrix.rotation
-    shear = matrix.shear
-
-    return np.array([tx, ty, sx, sy, rot, shear])
-
-
-def tf_matrix_to_tf_repr(tf_matrix: AffineTransform) -> np.ndarray:
-    """Angles expressed in radians."""
-    if not isinstance(tf_matrix, AffineTransform):
-        raise ValueError()
-
-    tx, ty = tf_matrix.translation
-    sx, sy = tf_matrix.scale
-    rot = tf_matrix.rotation
-    shear = tf_matrix.shear
-
-    return np.array([tx, ty, sx, sy, rot, shear], "float32")
+from octa_mosaic.mosaic.transforms.tf_utils import params_to_tf
 
 
 def individual_to_mosaic(individual: np.ndarray, mosaic: Mosaic) -> Mosaic:
@@ -178,8 +14,7 @@ def individual_to_mosaic(individual: np.ndarray, mosaic: Mosaic) -> Mosaic:
     new_mosaic = mosaic.copy()
 
     tfs_list = [
-        tf_repr_to_tf_matrix(individual[idx * 6 : (idx * 6) + 6])
-        for idx in range(n_images)
+        params_to_tf(individual[idx * 6 : (idx * 6) + 6]) for idx in range(n_images)
     ]
     new_mosaic.set_transforms_list(tfs_list)
 
