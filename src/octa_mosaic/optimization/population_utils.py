@@ -1,3 +1,4 @@
+import multiprocessing as mp
 from concurrent import futures
 from typing import Any, Callable, Sequence, Tuple
 
@@ -72,7 +73,7 @@ def evaluate_population(
         return np.array([f_obj(x, *f_obj_args) for x in population], float)
 
     fitness_values = np.zeros(len(population), float)
-
+    n_workers = mp.cpu_count() if n_workers < 1 else min(n_workers, mp.cpu_count())
     with futures.ProcessPoolExecutor(max_workers=n_workers) as executor:
         future_to_fitness = {
             executor.submit(f_obj, x, *f_obj_args): idx
