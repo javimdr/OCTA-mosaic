@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 
 from octa_mosaic import Mosaic, TemplateMatchingBuilder
-from octa_mosaic.modules.experiments.procedure import Procedure, Report
+from octa_mosaic.experiments.stages.procedure import Procedure, Report
 
 
 class TemplateMatchingEvaluatingEdges(Procedure):

@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Sequence, Tuple
 import numpy as np
 import scipy.optimize
 
-from octa_mosaic.modules.experiments.procedure import Procedure, Report
+from octa_mosaic.experiments.stages.procedure import Procedure, Report
 from octa_mosaic.mosaic.mosaic import Mosaic
 from octa_mosaic.mosaic.transforms import tf_utils
 from octa_mosaic.optimization.algorithms.differential_evolution import (
