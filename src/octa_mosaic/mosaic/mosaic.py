@@ -15,6 +15,12 @@ class Mosaic:
 
         self.mosaic_size = (0, 0)
 
+    def __repr__(self):
+        class_name = __class__.__name__
+        size = self.mosaic_size
+        n_images = self.n_images()
+        return f"{class_name}(size={size}, n_images={n_images})"
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Mosaic):
             return False
