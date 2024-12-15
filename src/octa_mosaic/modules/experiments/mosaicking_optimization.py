@@ -3,9 +3,9 @@ from typing import Any, Callable, Optional, Sequence, Tuple
 import numpy as np
 import scipy.optimize
 
-from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments.procedure import Procedure, Report
 from octa_mosaic.mosaic.mosaic import Mosaic
+from octa_mosaic.mosaic.transforms import tf_utils
 from octa_mosaic.optimization.algorithms.differential_evolution import (
     DifferentialEvolutionParams,
     differential_evolution_from_params,
@@ -28,7 +28,7 @@ class DEProcess(Procedure):
             de_params, bounds, fobj, fobj_args, initial_population
         )
 
-        mosaic_solution = optimization_utils.individual_to_mosaic(solution.x, mosaic)
+        mosaic_solution = tf_utils.individual_to_mosaic(solution.x, mosaic)
         report = self.generate_report(solution)
         return mosaic_solution, report
 
@@ -71,9 +71,7 @@ class ScipyOptimizeProcedure(Procedure):
             **optimize_kwargs,
         )
 
-        mosaic_solution = optimization_utils.individual_to_mosaic(
-            scipy_result.x, fobj_args[0]
-        )
+        mosaic_solution = tf_utils.individual_to_mosaic(scipy_result.x, fobj_args[0])
 
         optimize_result = OptimizeResult(
             x=scipy_result.x,

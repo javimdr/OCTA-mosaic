@@ -1,6 +1,8 @@
 import numpy as np
 from skimage.transform import AffineTransform
 
+from octa_mosaic.mosaic.mosaic import Mosaic
+
 
 def params_to_tf(params: np.ndarray) -> AffineTransform:
     """
@@ -58,3 +60,31 @@ def tf_to_params(matrix: AffineTransform) -> np.ndarray:
     shear = matrix.shear
 
     return np.array([tx, ty, sx, sy, rot, shear])
+
+
+def individual_to_mosaic(individual: np.ndarray, mosaic: Mosaic) -> Mosaic:
+    """
+    Convert an individual to a Mosaic.
+
+    This function takes an individual (represented as a 1D array) and applies the
+    transformation encoded in the array to the provided Mosaic. The individual is
+    divided into segments, each corresponding to a transformation params for each image
+    in the mosaic.
+
+    Args:
+        individual (np.ndarray): A array of transformation parameters for each image in
+            the mosaic.
+        mosaic (Mosaic): The original Mosaic to apply the transformations to.
+
+    Returns:
+        Mosaic: A new Mosaic with the transformations applied.
+    """
+    n_images = mosaic.n_images()
+    new_mosaic = mosaic.copy()
+
+    tfs_list = [
+        params_to_tf(individual[idx * 6 : (idx * 6) + 6]) for idx in range(n_images)
+    ]
+    new_mosaic.set_transforms_list(tfs_list)
+
+    return new_mosaic

@@ -6,19 +6,7 @@ import numpy as np
 from octa_mosaic.image_utils import image_similarity
 from octa_mosaic.image_utils.image_operations import dilate_mask
 from octa_mosaic.mosaic.mosaic import Mosaic
-from octa_mosaic.mosaic.transforms.tf_utils import params_to_tf
-
-
-def individual_to_mosaic(individual: np.ndarray, mosaic: Mosaic) -> Mosaic:
-    n_images = len(mosaic.images_list)
-    new_mosaic = mosaic.copy()
-
-    tfs_list = [
-        params_to_tf(individual[idx * 6 : (idx * 6) + 6]) for idx in range(n_images)
-    ]
-    new_mosaic.set_transforms_list(tfs_list)
-
-    return new_mosaic
+from octa_mosaic.mosaic.transforms.tf_utils import individual_to_mosaic
 
 
 def get_images_and_masks_list(mosaic: Mosaic):
