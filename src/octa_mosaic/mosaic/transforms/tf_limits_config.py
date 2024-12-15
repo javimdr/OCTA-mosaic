@@ -5,8 +5,8 @@ import numpy as np
 
 
 @dataclass(frozen=True)
-class AffineTransformBounds:
-    """Defines and calculates bounds for affine transformation parameters.
+class TFLimits:
+    """Defines the affine transformation limits for each parameter.
 
     This class encapsulates the configuration and computation of affine transformation
     bounds, including translation, scaling, rotation, and shear.

@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 
 
-class InitializerType(Enum):
+class PopulationInitializerType(Enum):
     MUTATE_SINGLE_TF_GEN = "mutate_single_tf_gen"
     MUTATE_ALL_TFS = "mutate_all_tfs"
 
@@ -63,12 +63,12 @@ class TFPopulationInitializer:
     seed: Optional[int] = None  # RandomState should be created in init
 
     def apply(
-        self, initializer_type: InitializerType, n_transformations: int
+        self, initializer_type: PopulationInitializerType, n_transformations: int
     ) -> np.ndarray:
-        if initializer_type == InitializerType.MUTATE_SINGLE_TF_GEN:
+        if initializer_type == PopulationInitializerType.MUTATE_SINGLE_TF_GEN:
             return self.mutate_single_tf_gen(n_transformations)
 
-        elif initializer_type == InitializerType.MUTATE_ALL_TFS:
+        elif initializer_type == PopulationInitializerType.MUTATE_ALL_TFS:
             return self.mutate_all_tfs(n_transformations)
 
         raise ValueError(f"Unknown initializer type `{initializer_type}`")

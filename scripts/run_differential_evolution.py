@@ -19,10 +19,10 @@ from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
-from octa_mosaic.mosaic.transforms.affine_transform_bounds import AffineTransformBounds
+from octa_mosaic.mosaic.transforms.tf_limits_config import TFLimits
 from octa_mosaic.mosaic.transforms.tf_population_initializers import (
-    InitializerType,
     PopulationInitializerConfig,
+    PopulationInitializerType,
     TFPopulationInitializer,
 )
 from octa_mosaic.optimization.algorithms.differential_evolution import (
@@ -48,8 +48,8 @@ class InitialPopulationConfig:
 def run_test(
     cases_list: List[DatasetCase],
     objective_function: Dict[str, Any],
-    transformation_config: AffineTransformBounds,
-    initial_population_type: InitializerType,
+    transformation_config: TFLimits,
+    initial_population_type: PopulationInitializerType,
     initial_population_config: InitialPopulationConfig,
     de_params: DifferentialEvolutionParams,
     image_preprocess_config: Dict,
@@ -158,14 +158,14 @@ def main():
         },
     }
 
-    TRANSFORMATION_CONFIG = AffineTransformBounds(
+    TRANSFORMATION_CONFIG = TFLimits(
         translation=20,
         scale=0.1,
         rotation=10,
         shear=5,
     )
 
-    INITIAL_POPULTION_TYPE = InitializerType.MUTATE_SINGLE_TF_GEN
+    INITIAL_POPULTION_TYPE = PopulationInitializerType.MUTATE_SINGLE_TF_GEN
     INITIAL_POPULATION_CONFIG = PopulationInitializerConfig(
         mutation_factor=1.5,
         popsize=1000,
