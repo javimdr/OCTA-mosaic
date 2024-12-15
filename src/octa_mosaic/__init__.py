@@ -1,4 +1,10 @@
+from octa_mosaic.mosaic import mosaic_metrics, mosaic_utils
 from octa_mosaic.mosaic.builders import TemplateMatchingBuilder
 from octa_mosaic.mosaic.mosaic import Mosaic
 
-__all__ = [Mosaic, TemplateMatchingBuilder]
+__all__ = [
+    Mosaic,
+    mosaic_metrics,
+    mosaic_utils,
+    TemplateMatchingBuilder,
+]
