@@ -16,10 +16,10 @@ RESULTS_FILENAME = "template_matching"
 RESULTS_PATH = EXPERIMENTS_PATH / RESULTS_FILENAME
 
 FIRST_PAIR_FUNCTION = {
-    "func": optimization_utils.multi_edge_optimized,
+    "func": optimization_utils.calc_zncc_on_multiple_seamlines,
     "kwargs": {
-        "borders_width": [10, 20, 30],
-        "borders_weight": [0.6, 0.3, 0.1],
+        "widths": [10, 20, 30],
+        "weights": [0.6, 0.3, 0.1],
     },
 }
 

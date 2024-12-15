@@ -45,72 +45,93 @@ def as_individual_objective_function(
     return function(current_mosaic, *function_args, **function_kwargs)
 
 
-def calc_zncc_on_overlaps(
-    overlaps_list: List[np.ndarray],
-    images_list: np.ndarray,
-    masks_list: np.ndarray,
+def calc_zncc_on_seamlines(
+    seamlines: List[np.ndarray], images: np.ndarray, masks: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
+    Compute the ZNCC (Zero-Mean Normalized Cross-Correlation) on the seamlines regions
+    between the mosaic images.
 
-    The area must be greater than `min_area` to evaluate the correlation,
-    by default 0.
+    The correation values are weighted by the seamline area size.
 
+    Args:
+        seamlines (List[np.ndarray]): A list of binary masks representing the
+            seamlines regions between consecutive images.
+        images (np.ndarray): Mosaic images list.
+        masks (np.ndarray): Mosaic images mask list.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: A tuple containing:
+            - An array with the ZNCC values for each seamline region.
+            - An array with corresponding seamline area size.
     """
 
-    fg_mask = masks_list[0]
-    fg_image = images_list[0]
+    fg_mask = masks[0]
+    fg_image = images[0]
 
-    CC_list = np.zeros(len(overlaps_list))
-    border_size_list = np.zeros(len(overlaps_list))
+    zncc_values = np.zeros(len(seamlines))
+    seamline_areas = np.zeros(len(seamlines))
 
-    for idx in range(1, len(images_list)):
-        overlap = overlaps_list[idx - 1]
-        bg_mask = masks_list[idx]
-        bg_image = images_list[idx]
+    for idx in range(1, len(images)):
+        curr_seamline = seamlines[idx - 1]
+        bg_mask = masks[idx]
+        bg_image = images[idx]
 
         # Calculate CC
-        overlap_size = np.count_nonzero(overlap)
-        border_size_list[idx - 1] = overlap_size
+        curr_seamline_area = np.count_nonzero(curr_seamline)
+        seamline_areas[idx - 1] = curr_seamline_area
 
-        if overlap_size > 0:
-            CC_list[idx - 1] = image_similarity.zncc(
-                fg_image[overlap].ravel(), bg_image[overlap].ravel()
+        if curr_seamline_area > 0:
+            zncc_values[idx - 1] = image_similarity.zncc(
+                fg_image[curr_seamline].ravel(), bg_image[curr_seamline].ravel()
             )
-        else:  # border_size == 0:
-            CC_list[idx - 1] = 0
+        else:
+            zncc_values[idx - 1] = 0
 
-        # plots.plot_mult([plots.impair(fg_image, bg_image), border_iou], [f"CC: {CC_list[idx-1]:.4f}", f"Area: {border_size_list[idx-1]}"],cols=2, base_size=10)
         fg_image = np.where((~fg_mask) & (bg_mask), bg_image, fg_image)
 
-    # sum_borders = border_size_list.sum()
-    # weights_list = np.array(
-    #     [border_size / sum_borders for border_size in border_size_list]
-    # )
-
-    return CC_list, border_size_list
+    return zncc_values, seamline_areas
 
 
-def multi_edge_optimized(
-    mosaic: Mosaic, borders_width: list, borders_weight: list
+def calc_zncc_on_multiple_seamlines(
+    mosaic: Mosaic, widths: List[int], weights: List[float]
 ) -> float:
+    """
+    Compute the ZNCC values for seamlines of multiple widths in the mosaic, considering
+    their respective areas. The ZNCC values are weighted to control to which seamline
+    should have more importance.
 
-    assert len(borders_width) == len(borders_weight)
+    For each seamline width, the function calculates the ZNCC values for the overlap
+    between the foreground and background images along the seamline. The values are then
+    weighted by the areas of the overlap, and the final weighted sum is computed using
+    the provided weights.
+
+    Args:
+        mosaic (Mosaic): The mosaic to evaluate.
+        widths (list): A list of seamline widths (in pixels) to evaluate.
+        weights (list): A list of weights to apply to each seamline's ZNCC value.
+
+    Returns:
+        float: The final weighted value.
+    """
+
+    assert len(widths) == len(weights)
     images_list, masks_list = get_images_and_masks(mosaic)
 
-    zncc_in_borders = []
-    for border_px in borders_width:
-        overlaps_list = compute_mosaic_seamlines(masks_list, border_px)
-        zncc_list, area_list = calc_zncc_on_overlaps(
-            overlaps_list, images_list, masks_list
+    zncc_in_seamlines = []
+    for width in widths:
+        mosaic_seamlines = compute_mosaic_seamlines(masks_list, width)
+        zncc_values, area_sizes = calc_zncc_on_seamlines(
+            mosaic_seamlines, images_list, masks_list
         )
 
-        total_area = area_list.sum()
+        total_area = area_sizes.sum()
         if total_area == 0:
-            weights_list = list(np.zeros(len(area_list)))
+            weights_list = list(np.zeros(len(area_sizes)))
         else:
-            weights_list = area_list / total_area
+            weights_list = area_sizes / total_area
 
-        value = np.sum(zncc_list * weights_list)
-        zncc_in_borders.append(value)
+        value = np.sum(zncc_values * weights_list)
+        zncc_in_seamlines.append(value)
 
-    return np.sum(np.multiply(borders_weight, zncc_in_borders))
+    return np.sum(np.multiply(weights, zncc_in_seamlines))

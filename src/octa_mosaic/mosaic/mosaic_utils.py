@@ -43,7 +43,7 @@ def get_images_and_masks(
 
 def compute_seamline(fg_mask: np.ndarray, bg_mask: np.ndarray, width: int = 10):
     """
-    Compute the seamline zone between the foreground and background masks, with a
+    Compute the seamline region between the foreground and background masks, with a
         specified width.
 
     Args:
@@ -67,7 +67,7 @@ def compute_seamline(fg_mask: np.ndarray, bg_mask: np.ndarray, width: int = 10):
 
 def compute_mosaic_seamlines(masks: np.ndarray, width: int) -> List[np.ndarray]:
     """
-    Compute the overlap along the seamlines between the foreground and background images.
+    Compute the regions along the seamlines between the foreground and background images.
 
     Args:
         masks (np.ndarray): A list of binary masks representing the foreground

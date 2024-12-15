@@ -151,10 +151,10 @@ def main():
     }
 
     OBJECTIVE_FUNCTION = {
-        "func": optimization_utils.multi_edge_optimized,
+        "func": optimization_utils.calc_zncc_on_multiple_seamlines,
         "kwargs": {
-            "borders_width": [5, 10, 15],
-            "borders_weight": [0.33, 0.33, 0.33],
+            "widths": [5, 10, 15],
+            "weights": [0.33, 0.33, 0.33],
         },
     }
 
