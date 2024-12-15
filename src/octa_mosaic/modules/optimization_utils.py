@@ -4,7 +4,10 @@ import numpy as np
 
 from octa_mosaic.image_utils import image_similarity
 from octa_mosaic.mosaic.mosaic import Mosaic
-from octa_mosaic.mosaic.mosaic_utils import calc_border_of_overlap, get_images_and_masks
+from octa_mosaic.mosaic.mosaic_utils import (
+    compute_mosaic_seamlines,
+    get_images_and_masks,
+)
 from octa_mosaic.mosaic.transforms.tf_utils import individual_to_mosaic
 
 
@@ -40,21 +43,6 @@ def as_individual_objective_function(
     """
     current_mosaic = individual_to_mosaic(tf_individual, initial_mosaic)
     return function(current_mosaic, *function_args, **function_kwargs)
-
-
-def calc_overlaps(masks_list: np.ndarray, seamline_px: int) -> List[np.ndarray]:
-    assert len(masks_list) > 0
-
-    fg_mask = masks_list[0]
-
-    overlaps_list = []
-    for idx in range(1, len(masks_list)):
-        bg_mask = masks_list[idx]
-        seamline = calc_border_of_overlap(fg_mask, bg_mask, seamline_px)
-        fg_mask = np.logical_or(fg_mask, bg_mask)
-
-        overlaps_list.append(seamline)
-    return overlaps_list
 
 
 def calc_zncc_on_overlaps(
@@ -111,7 +99,7 @@ def multi_edge_optimized(
 
     zncc_in_borders = []
     for border_px in borders_width:
-        overlaps_list = calc_overlaps(masks_list, border_px)
+        overlaps_list = compute_mosaic_seamlines(masks_list, border_px)
         zncc_list, area_list = calc_zncc_on_overlaps(
             overlaps_list, images_list, masks_list
         )

@@ -41,14 +41,52 @@ def get_images_and_masks(
     return images_list, masks_list
 
 
-def calc_border_of_overlap(fg, bg, border_px=10):
+def compute_seamline(fg_mask: np.ndarray, bg_mask: np.ndarray, width: int = 10):
     """
-    fg : foreground image
-    bg : background image
+    Compute the seamline zone between the foreground and background masks, with a
+        specified width.
+
+    Args:
+        fg_mask (np.ndarray): The binary mask representing the foreground image's
+            position in the mosaic.
+        bg_mask (np.ndarray): The binary mask representing the background image's
+            position in the mosaic.
+        width (int, optional): The width (in pixels) of the seamline.
+            Default is 10.
+
+    Returns:
+        np.ndarray: A binary mask representing the seamline.
     """
 
-    overlap = np.logical_and(fg, bg)
-    bg_non_overlaped_zone = np.logical_xor(bg, overlap)
-    bg_non_overlaped_zone_dilated = dilate_mask(bg_non_overlaped_zone, border_px)
+    overlap = np.logical_and(fg_mask, bg_mask)
+    bg_non_overlaped_zone = np.logical_xor(bg_mask, overlap)
+    bg_non_overlaped_zone_dilated = dilate_mask(bg_non_overlaped_zone, width)
 
     return np.logical_and(overlap, bg_non_overlaped_zone_dilated)
+
+
+def compute_mosaic_seamlines(masks: np.ndarray, width: int) -> List[np.ndarray]:
+    """
+    Compute the overlap along the seamlines between the foreground and background images.
+
+    Args:
+        masks (np.ndarray): A list of binary masks representing the foreground
+            (first mask) and background (subsequent masks) for each image in the mosaic.
+        width (int): The width of the seamline (in pixels).
+
+    Returns:
+        List[np.ndarray]: A list of binary masks representing the seamline overlaps
+            between consecutive images.
+    """
+    assert len(masks) > 0
+
+    fg_mask = masks[0]
+
+    overlaps_list = []
+    for idx in range(1, len(masks)):
+        bg_mask = masks[idx]
+        seamline = compute_seamline(fg_mask, bg_mask, width)
+        fg_mask = np.logical_or(fg_mask, bg_mask)
+
+        overlaps_list.append(seamline)
+    return overlaps_list

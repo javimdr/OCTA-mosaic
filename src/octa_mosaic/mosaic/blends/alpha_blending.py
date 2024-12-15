@@ -34,7 +34,7 @@ def _blender_two_images(
     stripe_fractions = [(anchor_px / stripes) * f for f in range(1, stripes + 2)]
     stripes_list = np.array(
         [
-            mosaic_utils.calc_border_of_overlap(fg_mask, bg_mask, int(stripe)).astype(
+            mosaic_utils.compute_seamline(fg_mask, bg_mask, int(stripe)).astype(
                 "float32"
             )
             for stripe in stripe_fractions
