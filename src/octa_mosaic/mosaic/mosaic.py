@@ -1,6 +1,6 @@
 import itertools
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -8,7 +8,13 @@ from skimage.transform import AffineTransform
 
 
 class Mosaic:
+    """A class representing a mosaic of OCTA images with affine transformations."""
+
     def __init__(self):
+        """
+        Initializes the Mosaic with empty lists for images, translations,
+        transformations, and an initial mosaic size of (0, 0).
+        """
         self.images_list = []
         self.translations_list = []
         self.transformations_list = []
@@ -59,10 +65,19 @@ class Mosaic:
 
         return new_mosaic
 
-    def add(self, image, translation=None, tr_format="ij"):
+    def add(
+        self,
+        image: np.ndarray,
+        translation: Optional[Tuple[float, float]] = None,
+        tr_format: Literal["ij", "xy"] = "ij",
+    ) -> None:
         """
-        location: representando la translación a realizar (No centrada)
-        tr_format: 'ij':(y,x); 'xy': (x y)
+        Add an image to the mosaic with an optional translation and transformation.
+
+        Args:
+            image (np.ndarray): The image to add.
+            translation (Tuple[float, float], optional): The translation to apply (default is [0, 0]).
+            tr_format (str, optional): The format of the translation ('ij' or 'xy').
         """
         if translation is None:
             translation = [0, 0]
@@ -75,14 +90,42 @@ class Mosaic:
         self._update_and_add(image, tf)
 
     def n_images(self):
+        """
+        Return the number of images in the mosaic.
+
+        Returns:
+            int: The number of images in the mosaic.
+        """
         return len(self.images_list)
 
-    def _tf_point(self, xy_point, tf):
+    def _tf_point(self, xy_point: Iterable[float], tf: AffineTransform) -> np.ndarray:
+        """
+        Transforms a point using an affine transformation.
+
+        Args:
+            xy_point (Iterable): The point (x, y) to transform.
+            tf (AffineTransform): The transformation to apply.
+
+        Returns:
+            np.ndarray: The transformed point.
+        """
         point = np.array([*xy_point, 1], "float32")
         point_tf = tf.params @ point
         return point_tf[:2]
 
-    def _tf_corners(self, image, tf):
+    def _tf_corners(
+        self, image: np.ndarray, tf: AffineTransform
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Transforms the corners of an image using an affine transformation.
+
+        Args:
+            image (np.ndarray): The image whose corners to transform.
+            tf (AffineTransform): The transformation to apply.
+
+        Returns:
+            tuple: The transformed corners of the image.
+        """
         h, w = image.shape[:2]
 
         top_left = self._tf_point([0, 0], tf)
@@ -92,25 +135,70 @@ class Mosaic:
 
         return top_left, top_right, bottom_left, bottom_right
 
-    def _get_centered_transform(self, translation, transformation, image_shape):
+    def _get_centered_transform(
+        self,
+        translation: AffineTransform,
+        transformation: AffineTransform,
+        image_shape: Tuple[int, int],
+    ):
+        """
+        Combines translation and transformation matrices and applies them to center
+        the image.
+
+        Args:
+            translation (AffineTransform): The translation to apply.
+            transformation (AffineTransform): The transformation to apply.
+            image_shape (tuple): The shape (H x W) of the image to be transformed.
+
+        Returns:
+            AffineTransform: The combined centered transformation.
+        """
         combinated = translation.params @ transformation.params
         return AffineTransform(to_centered_transform(combinated, image_shape))
 
     def image_centered_transform(self, idx: int) -> AffineTransform:
+        """
+        Returns the centered transformation for a specific image in the mosaic.
+
+        Args:
+            idx (int): The index of the image.
+
+        Returns:
+            AffineTransform: The centered transformation for the image.
+        """
         translation = self.translations_list[idx]
         transformation = self.transformations_list[idx]
         image_shape = self.images_list[idx].shape[:2]
         return self._get_centered_transform(translation, transformation, image_shape)
 
     def _round_mosaic_size(self, size: Tuple[float, float]) -> Tuple[int, int]:
+        """
+        Rounds the mosaic size to the nearest integer.
+
+        Args:
+            size (tuple): The size to round.
+
+        Returns:
+            tuple: The rounded size.
+        """
         return tuple(np.ceil(size).astype(int))
 
-    def _update_and_add(self, new_image, new_image_tf):
+    def _update_and_add(
+        self, new_image: np.ndarray, new_image_tf: AffineTransform
+    ) -> None:
+        """
+        Updates the mosaic size and adds a new image with its transformation to the
+        mosaic.
+
+        Args:
+            new_image (np.ndarray): The image to add.
+            new_image_tf (AffineTransform): The transformation to apply.
+        """
         h, w = self.mosaic_size
         new_w, new_h = w, h
         corners = self._tf_corners(new_image, new_image_tf)
 
-        # 1. ¿Se sale por la izquierda la nueva imagen?
+        # 1. Is the new image coming out on the left?
         if np.min(corners, axis=0)[0] < 0:
             tmp = np.min(corners, axis=0)[0]
             x_shift = abs(tmp)
@@ -118,11 +206,11 @@ class Mosaic:
         else:
             x_shift = 0
 
-        # 2. ¿Se sale por la derecha la nueva imagen?
+        # 2. Is the new image coming out on the right?
         if np.max(corners, axis=0)[0] > w:
             new_w += np.max(corners, axis=0)[0] - w
 
-        # 3. ¿Se sale por la arriba la nueva imagen?
+        # 3. Is the new image coming out on the top?
         if np.min(corners, axis=0)[1] < 0:
             tmp = np.min(corners, axis=0)[1]
             y_shift = abs(tmp)
@@ -130,7 +218,7 @@ class Mosaic:
         else:
             y_shift = 0
 
-        # 4. ¿Se sale por la abajo la nueva imagen?
+        # 4. Is the new image coming out on the bottom?
         if np.max(corners, axis=0)[1] > h:
             new_h += np.max(corners, axis=0)[1] - h
 
@@ -147,15 +235,35 @@ class Mosaic:
             translations_updated.append(tf_updated)
         self.translations_list = translations_updated
 
-    def image(self, pad=0, reverse_order=True, rgb=False) -> Optional[np.ndarray]:
-        images_order = np.arange(len(self.images_list))
-        if reverse_order:
-            images_order = images_order[::-1]
+    def image(self, pad: int = 0, rgb: bool = False) -> Optional[np.ndarray]:
+        """
+        Generates a mosaic image from the images in the mosaic, optionally padded.
 
+        Args:
+            pad (int, optional): Padding to apply to the images (default is 0).
+            rgb (bool, optional): Whether to convert images to RGB (default is False).
+
+        Returns:
+            np.ndarray or None: The generated mosaic image or None if no images.
+        """
+        images_order = np.arange(len(self.images_list))[::-1]
         return self.image_with_order(images_order, pad, rgb)
 
-    def image_with_order(self, images_order, pad=0, rgb=False) -> Optional[np.ndarray]:
-        """From background to foreground"""
+    def image_with_order(
+        self, images_order: Iterable[int], pad: int = 0, rgb: bool = False
+    ) -> Optional[np.ndarray]:
+        """
+        Generates a mosaic image drawing the images based on the specified order
+        (foreground to background).
+
+        Args:
+            images_order (list): A list of indices indicating the order of images.
+            pad (int, optional): Padding to apply to the images (default is 0).
+            rgb (bool, optional): Whether to convert images to RGB (default is False).
+
+        Returns:
+            np.ndarray or None: The generated mosaic image or None if no images.
+        """
         if len(self.images_list) == 0:
             return None
 
@@ -189,7 +297,18 @@ class Mosaic:
 
         return mosaic
 
-    def mask(self, idx, only_translation=True):
+    def mask(self, idx: int, only_translation: bool = True) -> np.ndarray:
+        """
+        Generates a mask for a specified image in the mosaic.
+
+        Args:
+            idx (int): The index of the image.
+            only_translation (bool, optional): Whether to apply only translation (default
+                is True).
+
+        Returns:
+            np.ndarray: The generated mask.
+        """
         image_1, tl_1, tf_1 = self.get_image_data(idx)
         if only_translation:
             tf_1_centered = tl_1
@@ -204,7 +323,16 @@ class Mosaic:
     def get_image_data(
         self, image_idx: int
     ) -> Tuple[np.ndarray, AffineTransform, AffineTransform]:
+        """
+        Retrieves the image data (image, translation, and transformation) for a
+        specified index.
 
+        Args:
+            image_idx (int): The index of the image.
+
+        Returns:
+            tuple: A tuple containing the image, translation, and transformation.
+        """
         if image_idx < 0:
             raise IndexError("list index out of range")
         data = (
@@ -217,18 +345,49 @@ class Mosaic:
     def image_intersection(
         self, idx_1: int, idx_2: int, only_translation: bool = True
     ) -> np.ndarray:
+        """
+        Calculates the intersection of two images in the mosaic.
+
+        Args:
+            idx_1 (int): The index of the first image.
+            idx_2 (int): The index of the second image.
+            only_translation (bool, optional): Whether to consider only translation
+                (default is True).
+
+        Returns:
+            np.ndarray: The intersection mask of the two images.
+        """
         mask_image_1 = self.mask(idx_1, only_translation)
         mask_image_2 = self.mask(idx_2, only_translation)
 
         return np.logical_and(mask_image_1 > 0, mask_image_2 > 0)
 
     def combinations(self) -> List[Tuple[int, int]]:
+        """
+        Generates all possible combinations of two images in the mosaic.
+
+        Returns:
+            list: A list of tuples containing pairs of image indices.
+        """
         indices = np.arange(len(self.images_list))
         return itertools.combinations(indices, 2)  # type: ignore
 
     def images_relationships(
         self, min_px_intersection=1, only_translation=True
     ) -> List[Tuple[int, int]]:
+        """
+        Calculates the relationships between images based on their intersection. Two
+        images are related if they overlap by at least `min_px_intersection` pixels.
+
+        Args:
+            min_px_intersection (int, optional): The minimum number of intersecting pixels
+                required for a relationship (default is 1).
+            only_translation (bool, optional): Whether to consider only translation
+                (default is True).
+
+        Returns:
+            list: A list of tuples containing pairs of image indices with enough intersection.
+        """
         relationships_list = []
 
         for idx1, idx2 in self.combinations():
@@ -239,8 +398,13 @@ class Mosaic:
         return relationships_list
 
     def set_transforms_list(self, transforms_list: List[AffineTransform]) -> None:
-        """Aplica la lista de transformaciones manteniendo el origen de coordenadas
-        constante. Al finalizar, recalcula el tamaño del mosaic."""
+        """
+        Applies a list of transformations to the mosaic, keeping the coordinate origin
+        constant.
+
+        Args:
+            transforms_list (list): A list of AffineTransform objects.
+        """
 
         assert len(transforms_list) == self.n_images()
         assert all([isinstance(x, AffineTransform) for x in transforms_list])
@@ -249,10 +413,20 @@ class Mosaic:
         self.update_size()
 
     def set_transformation(self, image_idx: int, tranformation: AffineTransform) -> None:
+        """
+        Sets a specific transformation for an image in the mosaic.
+
+        Args:
+            image_idx (int): The index of the image.
+            tranformation (AffineTransform): The transformation to apply.
+        """
         self.transformations_list[image_idx] = tranformation
         self.update_size()
 
-    def update_size(self):
+    def update_size(self) -> None:
+        """
+        Updates the mosaic size based on the images, translations, and transformations.
+        """
         if self.n_images() == 0:
             return
 
@@ -276,6 +450,13 @@ class Mosaic:
         self._apply_displacement_to_images(-left, -top)
 
     def _apply_displacement_to_images(self, dx: int, dy: int) -> None:
+        """
+        Applies displacement to the images in the mosaic.
+
+        Args:
+            dx (int): The displacement in the x direction.
+            dy (int): The displacement in the y direction.
+        """
         translations_updated = []
         shift = np.zeros((3, 3))
         shift[:2, -1] = [dx, dy]
