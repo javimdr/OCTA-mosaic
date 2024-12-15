@@ -1,32 +1,12 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import cv2
 import numpy as np
 
 from octa_mosaic.image_utils import image_similarity
 from octa_mosaic.image_utils.image_operations import dilate_mask
 from octa_mosaic.mosaic.mosaic import Mosaic
+from octa_mosaic.mosaic.mosaic_utils import get_images_and_masks
 from octa_mosaic.mosaic.transforms.tf_utils import individual_to_mosaic
-
-
-def get_images_and_masks_list(mosaic: Mosaic):
-    n_images = mosaic.n_images()
-    mosaic_size = mosaic.mosaic_size
-
-    masks_list = np.zeros((n_images, *mosaic_size), bool)
-    images_list = np.zeros((n_images, *mosaic_size))
-
-    for idx in range(n_images):
-        image, _, _ = mosaic.get_image_data(idx)
-        tf = mosaic.image_centered_transform(idx)
-
-        mask_tf = cv2.warpPerspective(np.ones_like(image), tf.params, mosaic_size[::-1])
-        image_tf = cv2.warpPerspective(image, tf.params, mosaic_size[::-1])
-
-        masks_list[idx] = mask_tf.astype(bool)
-        images_list[idx] = image_tf
-
-    return images_list, masks_list
 
 
 def calc_border_of_overlap(fg, bg, border_px=10):
@@ -63,7 +43,7 @@ def calc_CC_on_overlaps_and_areas(
     Tuple[np.ndarray, np.ndarray]
         Correlation list and area size of each overlap.
     """
-    images_list, masks_list = get_images_and_masks_list(mosaic)
+    images_list, masks_list = get_images_and_masks(mosaic)
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
@@ -198,7 +178,7 @@ def objective_function_multi_edge_geometric_mean_v2(
 
 # =========== DICE ===================
 def calc_dice_and_areas(mosaic, border_px=10, boder_size_th=0):
-    images_list, masks_list = get_images_and_masks_list(mosaic)
+    images_list, masks_list = get_images_and_masks(mosaic)
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
@@ -247,7 +227,7 @@ def calc_metric_edge(
     boder_size_th: int = 0,
 ) -> Tuple[np.ndarray, np.ndarray]:
 
-    images_list, masks_list = get_images_and_masks_list(mosaic)
+    images_list, masks_list = get_images_and_masks(mosaic)
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
@@ -420,7 +400,7 @@ def multi_edge_optimized(
 ) -> float:
 
     assert len(borders_width) == len(borders_weight)
-    images_list, masks_list = get_images_and_masks_list(mosaic)
+    images_list, masks_list = get_images_and_masks(mosaic)
 
     CC_border_list = []
     for border_px in borders_width:
@@ -452,7 +432,7 @@ def objective_function_seamline_zncc(
 
 
 def seamline_zncc(mosaic: Mosaic, border_width: int) -> float:
-    images_list, masks_list = get_images_and_masks_list(mosaic)
+    images_list, masks_list = get_images_and_masks(mosaic)
 
     overlaps_list = calc_overlaps(masks_list, border_width)
     CC_list, area_list = calc_zncc_on_overlaps(overlaps_list, images_list, masks_list)

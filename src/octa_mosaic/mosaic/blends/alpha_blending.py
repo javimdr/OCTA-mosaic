@@ -1,5 +1,6 @@
 import numpy as np
 
+import octa_mosaic.mosaic.mosaic_utils
 from octa_mosaic.modules import optimization_utils
 from octa_mosaic.mosaic.mosaic import Mosaic
 
@@ -76,7 +77,9 @@ def alpha_blending(mosaic: Mosaic, anchor_px: int = 10, strides: int = 10) -> np
     Returns:
         np.ndarray: The fully blended image as a NumPy array.
     """
-    images_list, masks_list = optimization_utils.get_images_and_masks_list(mosaic)
+    images_list, masks_list = octa_mosaic.mosaic.mosaic_utils.get_images_and_masks(
+        mosaic
+    )
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
