@@ -1,13 +1,10 @@
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import numpy as np
 
+from octa_mosaic import Mosaic
 from octa_mosaic.image_utils import image_similarity
-from octa_mosaic.mosaic.mosaic import Mosaic
-from octa_mosaic.mosaic.mosaic_utils import (
-    compute_mosaic_seamlines,
-    get_images_and_masks,
-)
+from octa_mosaic.mosaic import mosaic_utils
 
 
 def calc_zncc_on_seamlines(
@@ -81,11 +78,11 @@ def calc_zncc_on_multiple_seamlines(
     """
 
     assert len(widths) == len(weights)
-    images_list, masks_list = get_images_and_masks(mosaic)
+    images_list, masks_list = mosaic_utils.get_images_and_masks(mosaic)
 
     zncc_in_seamlines = []
     for width in widths:
-        mosaic_seamlines = compute_mosaic_seamlines(masks_list, width)
+        mosaic_seamlines = mosaic_utils.compute_mosaic_seamlines(masks_list, width)
         zncc_values, area_sizes = calc_zncc_on_seamlines(
             mosaic_seamlines, images_list, masks_list
         )

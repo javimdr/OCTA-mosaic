@@ -12,11 +12,11 @@ from octa_mosaic.experiments.constants import DATASET_PATH, EXPERIMENTS_PATH
 from octa_mosaic.experiments.data import Dataset, DatasetCase
 from octa_mosaic.experiments.encoders import NumpyEncoder
 from octa_mosaic.image_utils import image_operations
-from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
+from octa_mosaic.mosaic import mosaic_metrics
 from octa_mosaic.mosaic.transforms import tf_utils
 from octa_mosaic.mosaic.transforms.tf_limits_config import TFLimits
 from octa_mosaic.mosaic.transforms.tf_population_initializers import (
@@ -150,7 +150,7 @@ def main():
     }
 
     OBJECTIVE_FUNCTION = {
-        "func": optimization_utils.calc_zncc_on_multiple_seamlines,
+        "func": mosaic_metrics.calc_zncc_on_multiple_seamlines,
         "kwargs": {
             "widths": [5, 10, 15],
             "weights": [0.33, 0.33, 0.33],

@@ -7,16 +7,16 @@ from tqdm import tqdm
 from octa_mosaic.experiments.constants import DATASET_PATH, EXPERIMENTS_PATH
 from octa_mosaic.experiments.data import Dataset
 from octa_mosaic.experiments.encoders import NumpyEncoder
-from octa_mosaic.modules import optimization_utils
 from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
+from octa_mosaic.mosaic import mosaic_metrics
 
 RESULTS_FILENAME = "template_matching"
 RESULTS_PATH = EXPERIMENTS_PATH / RESULTS_FILENAME
 
 FIRST_PAIR_FUNCTION = {
-    "func": optimization_utils.calc_zncc_on_multiple_seamlines,
+    "func": mosaic_metrics.calc_zncc_on_multiple_seamlines,
     "kwargs": {
         "widths": [10, 20, 30],
         "weights": [0.6, 0.3, 0.1],
