@@ -1,3 +1,5 @@
+from typing import Any, Callable, Dict, Optional, Tuple
+
 import numpy as np
 from skimage.transform import AffineTransform
 
@@ -88,3 +90,37 @@ def individual_to_mosaic(individual: np.ndarray, mosaic: Mosaic) -> Mosaic:
     new_mosaic.set_transforms_list(tfs_list)
 
     return new_mosaic
+
+
+def as_objective_function(
+    tf_individual: np.ndarray,
+    function: Callable[[Mosaic, Any], float],
+    base_mosaic: Mosaic,
+    *function_args: Optional[Tuple[Any]],
+    **function_kwargs: Optional[Dict[str, Any]],
+) -> float:
+    """
+    Evaluates the objective function for an individual solution in the context of
+    a mosaic optimization problem.
+
+    This function converts the given individual representation (optimization vector)
+    into a `Mosaic` object, then applies the provided evaluation function to compute its
+    fitness.
+
+    Args:
+        tf_individual (np.ndarray): An array representing the individual solution.
+        function (Callable[[Mosaic, Any], float]): The function used
+            to evaluate the mosaic. It takes a `Mosaic` object and additional
+            parameters as inputs and returns a float value representing the fitness.
+        base_mosaic (Mosaic): The base mosaic, used as a starting point for constructing
+            the current mosaic.
+        *function_args (Optional[Tuple[Any]]): Positional arguments to pass to
+            the objective function.
+        **function_kwargs (Optional[Dict[str, Any]]): Keyword arguments to pass
+            to the objective function.
+
+    Returns:
+        float: The fitness value of the individual, as computed by the objective function.
+    """
+    current_mosaic = individual_to_mosaic(tf_individual, base_mosaic)
+    return function(current_mosaic, *function_args, **function_kwargs)

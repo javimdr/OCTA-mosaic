@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -8,41 +8,6 @@ from octa_mosaic.mosaic.mosaic_utils import (
     compute_mosaic_seamlines,
     get_images_and_masks,
 )
-from octa_mosaic.mosaic.transforms.tf_utils import individual_to_mosaic
-
-
-def as_individual_objective_function(
-    tf_individual: np.ndarray,
-    function: Callable[[Mosaic, Any], float],
-    initial_mosaic: Mosaic,
-    *function_args: Optional[Tuple[Any]],
-    **function_kwargs: Optional[Dict[str, Any]],
-) -> float:
-    """
-    Evaluates the objective function for an individual solution in the context of
-    a mosaic optimization problem.
-
-    This function converts the given individual representation (optimization vector)
-    into a `Mosaic` object, then applies the provided evaluation function to compute its
-    fitness.
-
-    Args:
-        tf_individual (np.ndarray): An array representing the individual solution.
-        function (Callable[[Mosaic, Any], float]): The objective function used
-            to evaluate the mosaic. It takes a `Mosaic` object and additional
-            parameters as inputs and returns a float value representing the fitness.
-        initial_mosaic (Mosaic): The initial mosaic configuration, used as a
-            starting point for constructing the current mosaic.
-        *function_args (Optional[Tuple[Any]]): Positional arguments to pass to
-            the objective function.
-        **function_kwargs (Optional[Dict[str, Any]]): Keyword arguments to pass
-            to the objective function.
-
-    Returns:
-        float: The fitness value of the individual, as computed by the objective function.
-    """
-    current_mosaic = individual_to_mosaic(tf_individual, initial_mosaic)
-    return function(current_mosaic, *function_args, **function_kwargs)
 
 
 def calc_zncc_on_seamlines(

@@ -9,8 +9,6 @@ import numpy as np
 import yaml
 
 from octa_mosaic.experiments.constants import DATASET_PATH, EXPERIMENTS_PATH
-
-# user packages
 from octa_mosaic.experiments.data import Dataset, DatasetCase
 from octa_mosaic.experiments.encoders import NumpyEncoder
 from octa_mosaic.image_utils import image_operations
@@ -19,6 +17,7 @@ from octa_mosaic.modules.experiments.mosaicking_creation import (
     TemplateMatchingEvaluatingEdges,
 )
 from octa_mosaic.modules.experiments.mosaicking_optimization import DEProcess
+from octa_mosaic.mosaic.transforms import tf_utils
 from octa_mosaic.mosaic.transforms.tf_limits_config import TFLimits
 from octa_mosaic.mosaic.transforms.tf_population_initializers import (
     PopulationInitializerConfig,
@@ -94,7 +93,7 @@ def run_test(
         )
 
         # 2) DE: Optimization
-        fobj_fn = optimization_utils.as_individual_objective_function
+        fobj_fn = tf_utils.as_objective_function
         fobj_args = (
             objective_function["func"],
             tm_mosaic,
