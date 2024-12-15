@@ -3,23 +3,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 
 from octa_mosaic.image_utils import image_similarity
-from octa_mosaic.image_utils.image_operations import dilate_mask
 from octa_mosaic.mosaic.mosaic import Mosaic
-from octa_mosaic.mosaic.mosaic_utils import get_images_and_masks
+from octa_mosaic.mosaic.mosaic_utils import calc_border_of_overlap, get_images_and_masks
 from octa_mosaic.mosaic.transforms.tf_utils import individual_to_mosaic
-
-
-def calc_border_of_overlap(fg, bg, border_px=10):
-    """
-    fg : foreground image
-    bg : background image
-    """
-
-    overlap = np.logical_and(fg, bg)
-    bg_non_overlaped_zone = np.logical_xor(bg, overlap)
-    bg_non_overlaped_zone_dilated = dilate_mask(bg_non_overlaped_zone, border_px)
-
-    return np.logical_and(overlap, bg_non_overlaped_zone_dilated)
 
 
 # ======== Funciones objetivo ========

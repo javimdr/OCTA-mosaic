@@ -3,6 +3,7 @@ from typing import List, Tuple
 import cv2
 import numpy as np
 
+from octa_mosaic.image_utils.image_operations import dilate_mask
 from octa_mosaic.mosaic.mosaic import Mosaic
 
 
@@ -38,3 +39,16 @@ def get_images_and_masks(
         images_list[idx] = image_tf
 
     return images_list, masks_list
+
+
+def calc_border_of_overlap(fg, bg, border_px=10):
+    """
+    fg : foreground image
+    bg : background image
+    """
+
+    overlap = np.logical_and(fg, bg)
+    bg_non_overlaped_zone = np.logical_xor(bg, overlap)
+    bg_non_overlaped_zone_dilated = dilate_mask(bg_non_overlaped_zone, border_px)
+
+    return np.logical_and(overlap, bg_non_overlaped_zone_dilated)

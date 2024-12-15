@@ -1,7 +1,6 @@
 import numpy as np
 
-import octa_mosaic.mosaic.mosaic_utils
-from octa_mosaic.modules import optimization_utils
+from octa_mosaic.mosaic import mosaic_utils
 from octa_mosaic.mosaic.mosaic import Mosaic
 
 
@@ -35,9 +34,9 @@ def _blender_two_images(
     stripe_fractions = [(anchor_px / stripes) * f for f in range(1, stripes + 2)]
     stripes_list = np.array(
         [
-            optimization_utils.calc_border_of_overlap(
-                fg_mask, bg_mask, int(stripe)
-            ).astype("float32")
+            mosaic_utils.calc_border_of_overlap(fg_mask, bg_mask, int(stripe)).astype(
+                "float32"
+            )
             for stripe in stripe_fractions
         ]
     )
@@ -77,9 +76,7 @@ def alpha_blending(mosaic: Mosaic, anchor_px: int = 10, strides: int = 10) -> np
     Returns:
         np.ndarray: The fully blended image as a NumPy array.
     """
-    images_list, masks_list = octa_mosaic.mosaic.mosaic_utils.get_images_and_masks(
-        mosaic
-    )
+    images_list, masks_list = mosaic_utils.get_images_and_masks(mosaic)
 
     fg_mask = masks_list[0]
     fg_image = images_list[0]
