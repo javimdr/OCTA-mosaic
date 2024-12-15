@@ -2,9 +2,9 @@ from typing import List, Tuple
 
 import numpy as np
 
-from octa_mosaic import Mosaic
 from octa_mosaic.image_utils import image_similarity
 from octa_mosaic.mosaic import mosaic_utils
+from octa_mosaic.mosaic.mosaic import Mosaic
 
 
 def calc_zncc_on_seamlines(
