@@ -8,4 +8,4 @@ DATA_PATH = PROJECT_ROOT / "data"
 PAPER_PATH = PROJECT_ROOT / "paper"
 
 EXPERIMENTS_PATH = ARTIFACTS_PATH / "experiments"
-DATASET_PATH = DATA_PATH / "octa_dataset"
+DATASET_PATH = DATA_PATH / "octa_mosaicking_dataset"
