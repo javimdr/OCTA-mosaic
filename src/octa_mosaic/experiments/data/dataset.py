@@ -12,8 +12,8 @@ class Dataset:
         self._dataset_path = dataset_path
         self._cases_path = [
             path
-            for path in glob.glob(f"{dataset_path}/**/", recursive=True)
-            if "sup" in path
+            for path in glob.glob(f"{self._dataset_path}/**/", recursive=True)
+            if "eye" in path
         ]
 
         self._cases = [DatasetCase(path) for path in sorted(self._cases_path)]

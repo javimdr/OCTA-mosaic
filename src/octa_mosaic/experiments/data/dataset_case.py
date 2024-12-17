@@ -41,9 +41,9 @@ class DatasetCase:
 
     def get_ID(self) -> str:
         splited = Path(self.case_path).parts
-        # ..., '8', 'ojo derecho', 'sup', ''
-        patient = splited[-3]
-        eye = splited[-2]
+        #  ... / 'Patient X' / <left or right eye> / < images>
+        patient = splited[-2]
+        eye = splited[-1]
         return f"{patient} ({eye})"
 
     def __repr__(self) -> str:
