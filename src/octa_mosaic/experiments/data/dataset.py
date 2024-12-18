@@ -106,10 +106,3 @@ class Dataset:
 
     def __str__(self) -> str:
         return f"Dataset({len(self.get_cases())} test cases)"
-
-
-dataset = Dataset()
-print(dataset._cases_path)
-print([case.get_ID() for case in dataset.get_cases()])
-print(len(dataset.get_cases()[0].get_images()))
-print(dataset.get_cases()[0].get_images()[0].shape)
